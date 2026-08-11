@@ -5,13 +5,7 @@
 
 USES "CONSOLE"
 
-#INCLUDE Once ".\Core\Enums.inc"
-#INCLUDE Once ".\Core\LibPath.inc"
-#INCLUDE Once ".\Core\Runtime.inc"
-#INCLUDE Once ".\Core\Security.inc"
-
-' Resolve libzmq.dll / libsodium.dll under Library\x86
-ZmqLibraryPathSet()
+#INCLUDE Once ".\Core\ZeroMQ.inc"
 
 Global lpszData As Asciiz * 9
 Global lpszDecoded As Asciiz * 9

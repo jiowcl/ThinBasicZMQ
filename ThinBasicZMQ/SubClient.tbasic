@@ -5,14 +5,7 @@
 
 USES "CONSOLE"
 
-#INCLUDE Once ".\Core\Enums.inc"
-#INCLUDE Once ".\Core\LibPath.inc"
-#INCLUDE Once ".\Core\Runtime.inc"
-#INCLUDE Once ".\Core\Context.inc"
-#INCLUDE Once ".\Core\Socket.inc"
-
-' Resolve libzmq.dll / libsodium.dll under Library\x86
-ZmqLibraryPathSet()
+#INCLUDE Once ".\Core\ZeroMQ.inc"
 
 Global lpszServerAddr As String
 Global hContext As Long

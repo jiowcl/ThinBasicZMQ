@@ -5,17 +5,7 @@
 
 USES "CONSOLE"
 
-#INCLUDE Once ".\Core\Enums.inc"
-#INCLUDE Once ".\Core\LibPath.inc"
-#INCLUDE Once ".\Core\Runtime.inc"
-#INCLUDE Once ".\Core\Context.inc"
-#INCLUDE Once ".\Core\Socket.inc"
-#INCLUDE Once ".\Core\Security.inc"
-#INCLUDE Once ".\Core\Helper.inc"
 #INCLUDE Once ".\Core\ZeroMQWrapper.inc"
-
-' Resolve libzmq.dll / libsodium.dll under Library\x86
-ZmqLibraryPathSet()
 
 Dim ZmqRuntimeRec As LibZmqRuntime
 Dim ZmqContextRec As LibZmqContext

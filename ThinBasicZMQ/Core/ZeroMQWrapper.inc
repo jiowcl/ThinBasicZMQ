@@ -3,6 +3,9 @@
 '  Code released under the MIT license.
 '--------------------------------------------------------------------------------------------
 
+' OOP façade over the procedural API.
+#INCLUDE Once "ZeroMQ.inc"
+
 ' Type
 
 Type LibZmqRuntime

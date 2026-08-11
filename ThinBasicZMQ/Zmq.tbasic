@@ -5,12 +5,7 @@
 
 USES "CONSOLE"
 
-#INCLUDE Once ".\Core\Enums.inc"
-#INCLUDE Once ".\Core\LibPath.inc"
-#INCLUDE Once ".\Core\Runtime.inc"
-
-' Resolve libzmq.dll / libsodium.dll under Library\x86
-ZmqLibraryPathSet()
+#INCLUDE Once ".\Core\ZeroMQ.inc"
 
 Global major As Long
 Global minor As Long

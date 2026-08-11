@@ -23,8 +23,10 @@ You can still talk to x64 ZeroMQ peers over `tcp://` (wire protocol is architect
 ```
 ThinBasicZMQ/
 ├── Core/                 # Include library
+│   ├── ZeroMQ.inc        # Umbrella: Enums + LibPath + all procedural Declares
+│   ├── ZeroMQWrapper.inc # Includes ZeroMQ.inc + LibZmq* Type façade
 │   ├── Enums.inc
-│   ├── LibPath.inc       # Sets CWD to Library\x86 (include before other Core Declares)
+│   ├── LibPath.inc       # Sets CWD to Library\x86 (loaded by ZeroMQ.inc)
 │   ├── Runtime.inc
 │   ├── Context.inc
 │   ├── Socket.inc
@@ -32,14 +34,44 @@ ThinBasicZMQ/
 │   ├── Poll.inc
 │   ├── Proxy.inc
 │   ├── Security.inc
-│   ├── Helper.inc
-│   └── ZeroMQWrapper.inc
+│   └── Helper.inc
 ├── Library/
 │   └── x86/              # libzmq.dll + libsodium.dll (x86)
 └── *.tbasic              # Examples
 ```
 
-Always `#INCLUDE` `LibPath.inc` **before** modules that `Declare Lib "libzmq.dll"`.
+Typical includes:
+
+```vb
+#INCLUDE Once ".\Core\ZeroMQ.inc"         ' procedural API
+#INCLUDE Once ".\Core\ZeroMQWrapper.inc"  ' procedural + Type wrapper
+```
+
+## Procedural vs Type wrapper
+
+Some ThinBasic reserved words cannot be Type method names, so the wrapper uses renamed methods:
+
+| Area | Procedural | Type | Wrapper method |
+|------|------------|------|----------------|
+| Runtime | `ZmqErrno` | `LibZmqRuntime` | `GetErrno` |
+| Runtime | `ZmqStrerrorString` | `LibZmqRuntime` | `GetStrerror` |
+| Runtime | `ZmqVersion` | `LibZmqRuntime` | `GetVersion` |
+| Runtime | `ZmqHas` | `LibZmqRuntime` | `HasCap` |
+| Context | `ZmqCtxNew` | `LibZmqContext` | `NewCtx` |
+| Context | `ZmqCtxTerm` | `LibZmqContext` | `CtxTerm` |
+| Context | `ZmqCtxShutdown` | `LibZmqContext` | `Shutdown` |
+| Context | `ZmqCtxSet` / `ZmqCtxGet` | `LibZmqContext` | `CtxSet` / `CtxGet` |
+| Socket | `ZmqSocket` | `LibZmqSocket` | `NewSocket` |
+| Socket | `ZmqBind` / `ZmqConnect` | `LibZmqSocket` | `SockBind` / `SockConnect` |
+| Socket | `ZmqSend` / `ZmqRecv` | `LibZmqSocket` | `SockSend` / `SockRecv` |
+| Socket | `ZmqClose` | `LibZmqSocket` | `SockClose` |
+| Socket | `ZmqSetsockoptInt` | `LibZmqSocket` | `SockSetsockoptInt` |
+| Msg | `ZmqMsgInit` / `ZmqMsgSend` | `LibZmqMsg` | `MsgInit` / `MsgSend` |
+| Poll | `ZmqPoll` | `LibZmqPoll` | `DoPoll` |
+| Proxy | `ZmqProxy` | `LibZmqProxy` | `DoProxy` |
+| Helper | `ZmqSleep` | `LibZmqHelper` | `DoSleep` |
+
+Methods that are not reserved words (for example `CurveKeypair`, `StopwatchStart`, `Steerable`) keep the same short name on the Type.
 
 ## How to Build
 
@@ -53,11 +85,6 @@ Publisher Server
 ```vb
 Uses "CONSOLE"
 
-#INCLUDE Once ".\Core\Enums.inc"
-#INCLUDE Once ".\Core\LibPath.inc"
-#INCLUDE Once ".\Core\Runtime.inc"
-#INCLUDE Once ".\Core\Context.inc"
-#INCLUDE Once ".\Core\Socket.inc"
 #INCLUDE Once ".\Core\ZeroMQWrapper.inc"
 
 Dim ZmqContextRec As LibZmqContext
@@ -114,11 +141,6 @@ Subscribe Client
 ```vb
 Uses "CONSOLE"
 
-#INCLUDE Once ".\Core\Enums.inc"
-#INCLUDE Once ".\Core\LibPath.inc"
-#INCLUDE Once ".\Core\Runtime.inc"
-#INCLUDE Once ".\Core\Context.inc"
-#INCLUDE Once ".\Core\Socket.inc"
 #INCLUDE Once ".\Core\ZeroMQWrapper.inc"
 
 Dim ZmqContextRec As LibZmqContext
