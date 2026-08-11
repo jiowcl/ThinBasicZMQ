@@ -101,6 +101,8 @@ Global hSocket As Long
 Global Rc As Long
 Global lpszTopic As String
 Global lpszSendMessage As String
+Global nBid As Long
+Global nAsk As Long
 
 lpszServerAddr = "tcp://*:1689"
 
@@ -118,7 +120,9 @@ Else
 
   While %TRUE
     lpszTopic = "quotes"
-    lpszSendMessage = "Bid:" & Str$(CInt(RndRange(1000, 9000))) & ",Ask:" & Str$(CInt(RndRange(1000, 9000)))
+    nBid = Int(RndRange(1000, 9000))
+    nAsk = Int(RndRange(1000, 9000))
+    lpszSendMessage = "Bid:" & Str$(nBid) & ",Ask:" & Str$(nAsk)
 
     If ZmqSocketRec.SockSend(hSocket, StrPtr(lpszTopic), Len(lpszTopic), $ZMQ_SNDMORE) = -1 Then
       Printl("Send topic failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
