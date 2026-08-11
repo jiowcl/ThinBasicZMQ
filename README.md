@@ -212,6 +212,7 @@ ZmqContextRec.Shutdown(hContext)
 ## License
 
 Copyright (c) 2019-2026 Ji-Feng Tsai.  
+ThinBasic Copyright (c) Eros Olmi [ThinBASIC Interpreter](https://github.com/ThinBASIC).  
 Code released under the MIT license.  
 
 ## TODO
