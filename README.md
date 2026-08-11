@@ -15,7 +15,7 @@ ZMQ Wrapper for ThinBasic Programming Language.
 ### Architecture note
 
 ThinBasic itself is a **32-bit** process, so only **x86** `libzmq.dll` / `libsodium.dll` can be loaded.  
-Do **not** use the x64 builds from FreeBasicZMQ `Library\x64`.  
+Do **not** use the x64 builds from FreeBasicZMQ/PureBasicZMQ `Library\x64`.  
 You can still talk to x64 ZeroMQ peers over `tcp://` (wire protocol is architecture-independent).
 
 ## Package layout
