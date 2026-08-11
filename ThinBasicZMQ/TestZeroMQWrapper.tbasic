@@ -1,0 +1,61 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+#INCLUDE Once ".\Core\Security.inc"
+#INCLUDE Once ".\Core\Helper.inc"
+#INCLUDE Once ".\Core\ZeroMQWrapper.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Dim ZmqRuntimeRec As LibZmqRuntime
+Dim ZmqContextRec As LibZmqContext
+Dim ZmqSocketRec As LibZmqSocket
+Dim ZmqSecurityRec As LibZmqSecurity
+
+Global major As Long
+Global minor As Long
+Global patch As Long
+Global hContext As Long
+Global hSocket As Long
+Global SocketType As Long
+Global lpszPublic As Asciiz * 41
+Global lpszSecret As Asciiz * 41
+
+major = 0
+minor = 0
+patch = 0
+
+ZmqRuntimeRec.GetVersion(major, minor, patch)
+Printl("Zmq Version: " & major & "." & minor & "." & patch)
+Printl("Has curve: " & ZmqRuntimeRec.HasCap("curve"))
+
+hContext = ZmqContextRec.NewCtx()
+hSocket = ZmqSocketRec.NewSocket(hContext, $ZMQ_REP)
+ZmqSocketRec.SockSetsockoptInt(hSocket, $ZMQ_LINGER, 0)
+ZmqSocketRec.SockGetsockoptInt(hSocket, $ZMQ_TYPE, SocketType)
+Printl("Socket Type: " & SocketType)
+
+If ZmqRuntimeRec.HasCap("curve") Then
+  If ZmqSecurityRec.CurveKeypair(VarPtr(lpszPublic), VarPtr(lpszSecret)) = 0 Then
+    Printl("Public Key: " & lpszPublic)
+    Printl("Secret Key: " & lpszSecret)
+  Else
+    Printl("CurveKeypair failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+  End If
+End If
+
+ZmqSocketRec.SockClose(hSocket)
+ZmqContextRec.Shutdown(hContext)
+
+Printl("Completed!")
+Console_Read()

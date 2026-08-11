@@ -1,0 +1,27 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Helper.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global hWatch As Long
+Global elapsed As DWord
+
+hWatch = ZmqStopwatchStart()
+ZmqSleep(1)
+elapsed = ZmqStopwatchIntermediate(hWatch)
+Printl("Intermediate (us): " & elapsed)
+
+ZmqSleep(1)
+elapsed = ZmqStopwatchStop(hWatch)
+Printl("Total (us): " & elapsed)
+
+Console_Read()

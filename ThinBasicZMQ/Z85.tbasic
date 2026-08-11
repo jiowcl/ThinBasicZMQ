@@ -1,0 +1,30 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Security.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global lpszData As Asciiz * 9
+Global lpszDecoded As Asciiz * 9
+Global lpszEncoded As String
+
+lpszData = "TestData"
+lpszEncoded = ZmqZ85EncodeStr(VarPtr(lpszData), 8)
+Printl("Z85 Encode: " & lpszEncoded)
+
+If ZmqZ85DecodeStr(lpszEncoded, VarPtr(lpszDecoded), 8) Then
+  Printl("Z85 Decode: " & Left$(lpszDecoded, 8))
+Else
+  Printl("Z85 Decode failed: " & ZmqStrerrorString(ZmqErrno()))
+End If
+
+Console_Read()

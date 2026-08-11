@@ -1,0 +1,79 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+#INCLUDE Once ".\Core\Msg.inc"
+#INCLUDE Once ".\Core\Helper.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global lpszServerAddr As String
+Global lpszClientAddr As String
+Global hContext As Long
+Global hRep As Long
+Global hReq As Long
+Global vMsgSend As ZmqMsgT
+Global vMsgRecv As ZmqMsgT
+Global lpszSendMessage As String
+Global i As Long
+Global pData As Long
+Global nSize As DWord
+
+lpszServerAddr = "tcp://*:1700"
+lpszClientAddr = "tcp://localhost:1700"
+
+hContext = ZmqCtxNew()
+hRep = ZmqSocket(hContext, $ZMQ_REP)
+hReq = ZmqSocket(hContext, $ZMQ_REQ)
+
+ZmqBind(hRep, lpszServerAddr)
+ZmqConnect(hReq, lpszClientAddr)
+
+Printl("REQ/REP message API demo on " & lpszClientAddr)
+
+For i = 1 To 5
+  lpszSendMessage = "From Client " & i
+
+  ZmqMsgInitSize(vMsgSend, Len(lpszSendMessage))
+  pData = ZmqMsgData(vMsgSend)
+  ZmqMemCopy(pData, StrPtr(lpszSendMessage), Len(lpszSendMessage))
+  ZmqMsgSend(vMsgSend, hReq, 0)
+  ZmqMsgClose(vMsgSend)
+
+  ZmqMsgInit(vMsgRecv)
+  If ZmqMsgRecv(vMsgRecv, hRep, 0) > 0 Then
+    nSize = ZmqMsgSize(vMsgRecv)
+    Printl("Server received: " & Left$(Peek$(ASCIIZ, ZmqMsgData(vMsgRecv)), nSize))
+  End If
+  ZmqMsgClose(vMsgRecv)
+
+  lpszSendMessage = "Hi " & i
+  ZmqMsgInitSize(vMsgSend, Len(lpszSendMessage))
+  pData = ZmqMsgData(vMsgSend)
+  ZmqMemCopy(pData, StrPtr(lpszSendMessage), Len(lpszSendMessage))
+  ZmqMsgSend(vMsgSend, hRep, 0)
+  ZmqMsgClose(vMsgSend)
+
+  ZmqMsgInit(vMsgRecv)
+  If ZmqMsgRecv(vMsgRecv, hReq, 0) > 0 Then
+    nSize = ZmqMsgSize(vMsgRecv)
+    Printl("Client reply: " & Left$(Peek$(ASCIIZ, ZmqMsgData(vMsgRecv)), nSize))
+  End If
+  ZmqMsgClose(vMsgRecv)
+Next
+
+ZmqClose(hReq)
+ZmqClose(hRep)
+ZmqCtxShutdown(hContext)
+
+Printl("Completed!")
+Console_Read()

@@ -1,0 +1,27 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global major As Long
+Global minor As Long
+Global patch As Long
+
+major = 0
+minor = 0
+patch = 0
+
+ZmqVersion(major, minor, patch)
+
+Printl("Zmq Version: " & major & "." & minor & "." & patch)
+
+Console_Read()

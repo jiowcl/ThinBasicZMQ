@@ -1,0 +1,58 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+#INCLUDE Once ".\Core\Poll.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global Rc As Long
+Global items As ZmqPollItemT
+Global i As Long
+Global lpszBuffer As Asciiz * 64
+
+lpszServerAddr = "tcp://*:1712"
+
+hContext = ZmqCtxNew()
+hSocket = ZmqSocket(hContext, $ZMQ_PULL)
+Rc = ZmqBind(hSocket, lpszServerAddr)
+
+ZmqSetsockoptInt(hSocket, $ZMQ_LINGER, 0)
+
+Printl("Bind an IP address: " & lpszServerAddr)
+Printl("Polling for 5 timeouts (500 ms each)...")
+
+For i = 1 To 5
+  items.socket = hSocket
+  items.fd = 0
+  items.events = $ZMQ_POLLIN
+  items.revents = 0
+
+  Rc = ZmqPoll(VarPtr(items), 1, 500)
+
+  If (Rc > 0) And ((items.revents And $ZMQ_POLLIN) <> 0) Then
+    ZmqRecv(hSocket, VarPtr(lpszBuffer), SizeOf(lpszBuffer), 0)
+    Printl("Received: " & lpszBuffer)
+  ElseIf Rc = 0 Then
+    Printl("Poll timeout #" & i)
+  Else
+    Printl("Poll error: " & ZmqStrerrorString(ZmqErrno()))
+  End If
+Next
+
+ZmqClose(hSocket)
+ZmqCtxShutdown(hContext)
+
+Console_Read()

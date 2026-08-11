@@ -1,0 +1,60 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Function RndRange(ByVal first As Double, ByVal last As Double) As Double
+  Function = Rnd * (last - first) + first
+End Function
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global Rc As Long
+Global lpszTopic As String
+Global lpszSendMessage As String
+
+lpszServerAddr = "tcp://*:1689"
+
+hContext = ZmqCtxNew()
+hSocket = ZmqSocket(hContext, $ZMQ_PUB)
+Rc = ZmqBind(hSocket, lpszServerAddr)
+
+If Rc <> 0 Then
+  Printl("Bind failed: " & ZmqStrerrorString(ZmqErrno()))
+Else
+  Printl("Bind an IP address: " & lpszServerAddr)
+
+  ' Allow subscribers time to connect (slow joiner).
+  Sleep 200
+  Randomize
+
+  While %TRUE
+    lpszTopic = "quotes"
+    lpszSendMessage = "Bid:" & Str$(CInt(RndRange(1000, 9000))) & ",Ask:" & Str$(CInt(RndRange(1000, 9000)))
+
+    If ZmqSend(hSocket, StrPtr(lpszTopic), Len(lpszTopic), $ZMQ_SNDMORE) = -1 Then
+      Printl("Send topic failed: " & ZmqStrerrorString(ZmqErrno()))
+    ElseIf ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+      Printl("Send message failed: " & ZmqStrerrorString(ZmqErrno()))
+    Else
+      Printl("Published: " & lpszSendMessage)
+    End If
+
+    Sleep 100
+  Wend
+End If
+
+ZmqClose(hSocket)
+ZmqCtxShutdown(hContext)

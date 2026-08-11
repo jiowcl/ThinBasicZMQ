@@ -1,0 +1,45 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global major As Long
+Global minor As Long
+Global patch As Long
+Global hContext As Long
+Global hSocket As Long
+Global SocketType As Long
+
+major = 0
+minor = 0
+patch = 0
+
+ZmqVersion(major, minor, patch)
+Printl("Zmq Version: " & major & "." & minor & "." & patch)
+
+Printl("Has ipc: " & ZmqHas("ipc"))
+Printl("Has curve: " & ZmqHas("curve"))
+Printl("Has draft: " & ZmqHas("draft"))
+
+hContext = ZmqCtxNew()
+hSocket = ZmqSocket(hContext, $ZMQ_REP)
+
+ZmqSetsockoptInt(hSocket, $ZMQ_LINGER, 0)
+ZmqGetsockoptInt(hSocket, $ZMQ_TYPE, SocketType)
+Printl("Socket Type: " & SocketType)
+
+ZmqClose(hSocket)
+ZmqCtxShutdown(hContext)
+
+Console_Read()

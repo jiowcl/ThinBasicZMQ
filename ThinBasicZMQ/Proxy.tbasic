@@ -1,0 +1,67 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+#INCLUDE Once ".\Core\Proxy.inc"
+#INCLUDE Once ".\Core\Helper.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global hContext As Long
+Global hFrontend As Long
+Global hBackend As Long
+Global hControl As Long
+Global hControlPeer As Long
+Global hThread As Long
+Global lpszTerminate As String
+
+Sub ProxyWorker(ByVal vData As Long)
+  Printl("Proxy started")
+  ZmqProxySteerable(hFrontend, hBackend, 0, hControl)
+  Printl("Proxy stopped")
+End Sub
+
+hContext = ZmqCtxNew()
+hFrontend = ZmqSocket(hContext, $ZMQ_ROUTER)
+hBackend = ZmqSocket(hContext, $ZMQ_DEALER)
+hControl = ZmqSocket(hContext, $ZMQ_PAIR)
+hControlPeer = ZmqSocket(hContext, $ZMQ_PAIR)
+
+ZmqSetsockoptInt(hFrontend, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hBackend, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hControl, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hControlPeer, $ZMQ_LINGER, 0)
+
+ZmqBind(hFrontend, "tcp://*:1710")
+ZmqBind(hBackend, "tcp://*:1711")
+ZmqBind(hControl, "inproc://proxy-control")
+ZmqConnect(hControlPeer, "inproc://proxy-control")
+
+Printl("Frontend: tcp://*:1710")
+Printl("Backend: tcp://*:1711")
+
+hThread = ZmqThreadstart(CodePtr(ProxyWorker), 0)
+Sleep 500
+
+lpszTerminate = "TERMINATE"
+ZmqSend(hControlPeer, StrPtr(lpszTerminate), Len(lpszTerminate), 0)
+Sleep 200
+ZmqThreadclose(hThread)
+
+ZmqClose(hControlPeer)
+ZmqClose(hControl)
+ZmqClose(hBackend)
+ZmqClose(hFrontend)
+ZmqCtxShutdown(hContext)
+
+Printl("Completed!")
+Console_Read()

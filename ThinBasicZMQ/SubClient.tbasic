@@ -1,0 +1,62 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global lpszSubscribe As String
+Global Rc As Long
+Global lpszTopicBuffer As Asciiz * 256
+Global lpszRecvBuffer As Asciiz * 256
+Global TopicBytes As Long
+Global MessageBytes As Long
+
+lpszServerAddr = "tcp://localhost:1689"
+lpszSubscribe = "quotes"
+
+hContext = ZmqCtxNew()
+hSocket = ZmqSocket(hContext, $ZMQ_SUB)
+
+' Subscribe before connect to reduce missed early messages.
+ZmqSetsockopt(hSocket, $ZMQ_SUBSCRIBE, StrPtr(lpszSubscribe), Len(lpszSubscribe))
+Rc = ZmqConnect(hSocket, lpszServerAddr)
+
+If Rc <> 0 Then
+  Printl("Connect failed: " & ZmqStrerrorString(ZmqErrno()))
+Else
+  Printl("Connected: " & lpszServerAddr & " (subscribe=" & lpszSubscribe & ")")
+
+  While %TRUE
+    TopicBytes = ZmqRecv(hSocket, VarPtr(lpszTopicBuffer), SizeOf(lpszTopicBuffer), 0)
+
+    If TopicBytes = -1 Then
+      Printl("Recv topic failed: " & ZmqStrerrorString(ZmqErrno()))
+    Else
+      MessageBytes = ZmqRecv(hSocket, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+
+      If MessageBytes = -1 Then
+        Printl("Recv message failed: " & ZmqStrerrorString(ZmqErrno()))
+      Else
+        Printl(Left$(lpszRecvBuffer, MessageBytes))
+      End If
+    End If
+  Wend
+End If
+
+ZmqClose(hSocket)
+ZmqCtxShutdown(hContext)
+
+Console_Read()

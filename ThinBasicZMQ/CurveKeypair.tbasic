@@ -1,0 +1,38 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Security.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global lpszPublic As Asciiz * 41
+Global lpszSecret As Asciiz * 41
+Global lpszDerived As String
+
+If ZmqHas("curve") = 0 Then
+  Printl("libzmq was built without CURVE support (zmq_has(""curve"") = 0).")
+Else
+  If ZmqCurveKeypair(VarPtr(lpszPublic), VarPtr(lpszSecret)) = 0 Then
+    lpszDerived = ZmqCurvePublicStr(lpszSecret)
+
+    Printl("Public Key : " & lpszPublic)
+    Printl("Secret Key : " & lpszSecret)
+    Printl("Derived Pub: " & lpszDerived)
+
+    If lpszPublic = lpszDerived Then
+      Printl("CurvePublic matches CurveKeypair public key.")
+    End If
+  Else
+    Printl("CurveKeypair failed: " & ZmqStrerrorString(ZmqErrno()))
+  End If
+End If
+
+Console_Read()

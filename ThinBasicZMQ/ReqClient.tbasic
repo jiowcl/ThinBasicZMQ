@@ -1,0 +1,45 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\Enums.inc"
+#INCLUDE Once ".\Core\LibPath.inc"
+#INCLUDE Once ".\Core\Runtime.inc"
+#INCLUDE Once ".\Core\Context.inc"
+#INCLUDE Once ".\Core\Socket.inc"
+
+' Resolve libzmq.dll / libsodium.dll under Library\x86
+ZmqLibraryPathSet()
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global Rc As Long
+Global i As Long
+Global lpszSendMessage As String
+Global lpszRecvBuffer As Asciiz * 32
+
+lpszServerAddr = "tcp://localhost:1700"
+
+hContext = ZmqCtxNew()
+hSocket = ZmqSocket(hContext, $ZMQ_REQ)
+Rc = ZmqConnect(hSocket, lpszServerAddr)
+
+Printl("Connect to Server: " & lpszServerAddr)
+
+For i = 0 To 10
+  lpszSendMessage = "From Client"
+  ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+  ZmqRecv(hSocket, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+
+  Printl("Reply From Server: ")
+  Printl(lpszRecvBuffer)
+Next
+
+ZmqClose(hSocket)
+ZmqCtxShutdown(hContext)
+
+Console_Read()
