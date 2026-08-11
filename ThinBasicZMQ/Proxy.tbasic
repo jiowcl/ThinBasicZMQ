@@ -15,12 +15,6 @@ Global hControlPeer As Long
 Global hThread As Long
 Global lpszTerminate As String
 
-Sub ProxyWorker(ByVal vData As Long)
-  Printl("Proxy started")
-  ZmqProxySteerable(hFrontend, hBackend, 0, hControl)
-  Printl("Proxy stopped")
-End Sub
-
 hContext = ZmqCtxNew()
 hFrontend = ZmqSocket(hContext, $ZMQ_ROUTER)
 hBackend = ZmqSocket(hContext, $ZMQ_DEALER)
@@ -56,3 +50,10 @@ ZmqCtxShutdown(hContext)
 
 Printl("Completed!")
 Console_Read()
+
+Function ProxyWorker(ByVal vData As Long) CDECL As Long
+  Printl("Proxy started")
+  ZmqProxySteerable(hFrontend, hBackend, 0, hControl)
+  Printl("Proxy stopped")
+  Function = 0
+End Function

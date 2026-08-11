@@ -19,7 +19,15 @@ Declare Function ZmqSetCurrentDirectory Lib "kernel32.dll" Alias "SetCurrentDire
 ' </summary>
 ' <returns>Returns void.</returns>
 Sub ZmqLibraryPathSet()
-  ZmqSetCurrentDirectory(APP_SourcePath & "Library\x86")
+  Local sPath As String
+
+  ' Scripts in ThinBasicZMQ\
+  sPath = APP_SourcePath & "Library\x86"
+  If ZmqSetCurrentDirectory(sPath) = 0 Then
+    ' Scripts in ThinBasicZMQ\Module\
+    sPath = APP_SourcePath & "..\Library\x86"
+    ZmqSetCurrentDirectory(sPath)
+  End If
 End Sub
 
 ' Switch CWD so subsequent Declare Lib "libzmq.dll" resolves package DLLs.

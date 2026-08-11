@@ -1,0 +1,113 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\ZeroMQ.inc"
+
+' Socket monitor demo (single-threaded for ThinBasic CodePtr stability).
+' Shows zmq_socket_monitor + ZMQ_PAIR event stream.
+
+Global lpszServerAddr As String
+Global lpszClientAddr As String
+Global lpszMonitorAddr As String
+Global hContext As Long
+Global hSocketRep As Long
+Global hSocketReq As Long
+Global hSocketMonitor As Long
+Global lpszSendMessage As String
+Global lpszRecvBuffer As Asciiz * 32
+Global lpszAddress As Asciiz * 256
+Global items As ZmqPollItemT
+Global nRc As Long
+Global nRecvBytes As Long
+Global pEventBuf As Long
+Global nEventId As Word
+Global nEventValue As Long
+Global nLoop As Long
+
+lpszServerAddr = "tcp://*:1714"
+lpszClientAddr = "tcp://127.0.0.1:1714"
+lpszMonitorAddr = "inproc://monitor.rep"
+
+hContext = ZmqCtxNew()
+hSocketRep = ZmqSocket(hContext, $ZMQ_REP)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_RCVTIMEO, 2000)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_SNDTIMEO, 2000)
+
+ZmqSocketMonitor(hSocketRep, lpszMonitorAddr, $ZMQ_EVENT_ACCEPTED Or $ZMQ_EVENT_CLOSED Or $ZMQ_EVENT_LISTENING)
+
+' Connect monitor PAIR before Bind so LISTENING can be delivered (otherwise Bind may block).
+hSocketMonitor = ZmqSocket(hContext, $ZMQ_PAIR)
+ZmqSetsockoptInt(hSocketMonitor, $ZMQ_LINGER, 0)
+ZmqConnect(hSocketMonitor, lpszMonitorAddr)
+Printl("Monitor connected: " & lpszMonitorAddr)
+
+ZmqBind(hSocketRep, lpszServerAddr)
+Printl("Bind an IP address: " & lpszServerAddr)
+
+hSocketReq = ZmqSocket(hContext, $ZMQ_REQ)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_RCVTIMEO, 2000)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_SNDTIMEO, 2000)
+ZmqConnect(hSocketReq, lpszClientAddr)
+Printl("Client connected: " & lpszClientAddr)
+
+Sleep 100
+
+lpszSendMessage = "From Client"
+ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+
+nRecvBytes = ZmqRecv(hSocketRep, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+If nRecvBytes > 0 Then
+  Printl("REP received: " & Left$(lpszRecvBuffer, nRecvBytes))
+  lpszSendMessage = "Hi"
+  ZmqSend(hSocketRep, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+End If
+
+nRecvBytes = ZmqRecv(hSocketReq, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+If nRecvBytes > 0 Then
+  Printl("REQ reply: " & Left$(lpszRecvBuffer, nRecvBytes))
+End If
+
+Printl("Polling monitor events...")
+For nLoop = 1 To 8
+  items.socket = hSocketMonitor
+  items.fd = 0
+  items.events = $ZMQ_POLLIN
+  items.revents = 0
+
+  nRc = ZmqPoll(VarPtr(items), 1, 200)
+  If nRc > 0 Then
+    pEventBuf = HEAP_Alloc(6)
+    nRecvBytes = ZmqRecv(hSocketMonitor, pEventBuf, 6, $ZMQ_DONTWAIT)
+    If nRecvBytes >= 6 Then
+      nEventId = Peek(Word, pEventBuf)
+      nEventValue = Peek(Long, pEventBuf + 2)
+      ZmqRecv(hSocketMonitor, VarPtr(lpszAddress), SizeOf(lpszAddress), $ZMQ_DONTWAIT)
+
+      Select Case nEventId
+        Case $ZMQ_EVENT_LISTENING
+          Printl("Event LISTENING value=" & nEventValue & " addr=" & lpszAddress)
+        Case $ZMQ_EVENT_ACCEPTED
+          Printl("Event ACCEPTED value=" & nEventValue & " addr=" & lpszAddress)
+        Case $ZMQ_EVENT_CLOSED
+          Printl("Event CLOSED value=" & nEventValue & " addr=" & lpszAddress)
+        Case Else
+          Printl("Event id=" & nEventId & " value=" & nEventValue & " addr=" & lpszAddress)
+      End Select
+    End If
+    HEAP_Free(pEventBuf)
+  End If
+Next
+
+ZmqClose(hSocketMonitor)
+ZmqClose(hSocketReq)
+ZmqClose(hSocketRep)
+ZmqCtxShutdown(hContext)
+
+Printl("Completed!")
+Console_Read()

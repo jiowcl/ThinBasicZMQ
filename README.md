@@ -37,8 +37,21 @@ ThinBasicZMQ/
 │   └── Helper.inc
 ├── Library/
 │   └── x86/              # libzmq.dll + libsodium.dll (x86)
-└── *.tbasic              # Examples
+├── Module/               # Type-wrapper examples (Pub/Sub, REQ/REP)
+└── *.tbasic              # Procedural examples (incl. Monitor, Thread, Proxy, …)
 ```
+
+Samples:
+
+| Script | Notes |
+|--------|--------|
+| `PubServer.tbasic` / `SubClient.tbasic` | PUB/SUB (procedural) |
+| `RepServer.tbasic` / `ReqClient.tbasic` | REQ/REP (procedural) |
+| `Module\*.tbasic` | Same patterns via `ZeroMQWrapper.inc` |
+| `Monitor.tbasic` | `zmq_socket_monitor` (connect PAIR **before** Bind) |
+| `Thread.tbasic` | `zmq_threadstart` / `zmq_threadclose` (`Function … CDECL`; join before other script work) |
+| `Proxy.tbasic` / `Poll.tbasic` | Proxy and poll |
+| `CurveKeypair.tbasic` / `Z85.tbasic` | Security helpers |
 
 Typical includes:
 
@@ -199,11 +212,11 @@ ZmqContextRec.Shutdown(hContext)
 ## License
 
 Copyright (c) 2019-2026 Ji-Feng Tsai.  
-Code released under the MIT license.
+Code released under the MIT license.  
 
 ## TODO
 
-- More examples
+- PLAIN/CURVE end-to-end and weather-style samples
 
 ## Donation
 

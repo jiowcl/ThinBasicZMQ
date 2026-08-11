@@ -1,0 +1,61 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once "..\Core\ZeroMQWrapper.inc"
+
+Dim ZmqContextRec As LibZmqContext
+Dim ZmqSocketRec As LibZmqSocket
+Dim ZmqRuntimeRec As LibZmqRuntime
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global Rc As Long
+Global lpszTopic As String
+Global lpszSendMessage As String
+Global nBid As Long
+Global nAsk As Long
+
+Function RndRange(ByVal first As Double, ByVal last As Double) As Double
+  Function = Rnd * (last - first) + first
+End Function
+
+lpszServerAddr = "tcp://*:1689"
+
+hContext = ZmqContextRec.NewCtx()
+hSocket = ZmqSocketRec.NewSocket(hContext, $ZMQ_PUB)
+Rc = ZmqSocketRec.SockBind(hSocket, lpszServerAddr)
+
+If Rc <> 0 Then
+  Printl("Bind failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+Else
+  Printl("Bind an IP address: " & lpszServerAddr)
+
+  ' Allow subscribers time to connect (slow joiner).
+  Sleep 200
+  Randomize
+
+  While %TRUE
+    lpszTopic = "quotes"
+    nBid = Int(RndRange(1000, 9000))
+    nAsk = Int(RndRange(1000, 9000))
+    lpszSendMessage = "Bid:" & Str$(nBid) & ",Ask:" & Str$(nAsk)
+
+    If ZmqSocketRec.SockSend(hSocket, StrPtr(lpszTopic), Len(lpszTopic), $ZMQ_SNDMORE) = -1 Then
+      Printl("Send topic failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+    ElseIf ZmqSocketRec.SockSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+      Printl("Send message failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+    Else
+      Printl("Published: " & lpszSendMessage)
+    End If
+
+    Sleep 100
+  Wend
+End If
+
+ZmqSocketRec.SockClose(hSocket)
+ZmqContextRec.Shutdown(hContext)

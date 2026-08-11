@@ -1,0 +1,80 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\ZeroMQ.inc"
+
+' Demonstrates zmq_threadstart / zmq_threadclose with a CodePtr worker.
+'
+' ThinBasic's interpreter is not thread-safe with concurrent script activity.
+' Pattern used here: run the CodePtr worker alone (native ZmqSleep + flags),
+' join it, then do REQ/REP on the main thread. For a blocking C-side ZMQ
+' worker see Proxy.tbasic.
+
+Global hThread As Long
+Global nWorkerArg As Long
+Global nWorkerDone As Long
+
+Global lpszServerAddr As String
+Global lpszClientAddr As String
+Global hContext As Long
+Global hSocketRep As Long
+Global hSocketReq As Long
+Global lpszSendMessage As String
+Global lpszRecvBuffer As Asciiz * 32
+Global nRecvBytes As Long
+Global nLoop As Long
+
+lpszServerAddr = "tcp://*:1730"
+lpszClientAddr = "tcp://127.0.0.1:1730"
+nWorkerArg = 0
+nWorkerDone = 0
+
+Printl("Starting worker thread...")
+hThread = ZmqThreadstart(CodePtr(TestZmqThreadWorker), 42)
+ZmqThreadclose(hThread)
+Printl("Worker arg=" & nWorkerArg & " done=" & nWorkerDone)
+
+Printl("REQ/REP on main thread...")
+hContext = ZmqCtxNew()
+hSocketRep = ZmqSocket(hContext, $ZMQ_REP)
+hSocketReq = ZmqSocket(hContext, $ZMQ_REQ)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_RCVTIMEO, 2000)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_RCVTIMEO, 2000)
+ZmqBind(hSocketRep, lpszServerAddr)
+ZmqConnect(hSocketReq, lpszClientAddr)
+Sleep 50
+
+For nLoop = 1 To 3
+  lpszSendMessage = "From Client"
+  ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+  nRecvBytes = ZmqRecv(hSocketRep, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+  If nRecvBytes > 0 Then
+    Printl("REP received: " & Left$(lpszRecvBuffer, nRecvBytes))
+    lpszSendMessage = "Hi"
+    ZmqSend(hSocketRep, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+  End If
+  nRecvBytes = ZmqRecv(hSocketReq, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+  If nRecvBytes > 0 Then
+    Printl("REQ reply: " & Left$(lpszRecvBuffer, nRecvBytes))
+  End If
+Next
+
+ZmqClose(hSocketReq)
+ZmqClose(hSocketRep)
+ZmqCtxShutdown(hContext)
+
+Printl("Completed!")
+Console_Read()
+
+Function TestZmqThreadWorker(ByVal vData As Long) CDECL As Long
+  nWorkerArg = vData
+  ZmqSleep(1)
+  nWorkerDone = 1
+  Function = 0
+End Function

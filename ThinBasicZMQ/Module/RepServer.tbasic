@@ -1,0 +1,47 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once "..\Core\ZeroMQWrapper.inc"
+
+Dim ZmqContextRec As LibZmqContext
+Dim ZmqSocketRec As LibZmqSocket
+Dim ZmqRuntimeRec As LibZmqRuntime
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global Rc As Long
+Global lTotal As Long
+Global lpszRecvBuffer As Asciiz * 32
+Global lpszSendMessage As String
+
+lpszServerAddr = "tcp://*:1700"
+
+hContext = ZmqContextRec.NewCtx()
+hSocket = ZmqSocketRec.NewSocket(hContext, $ZMQ_REP)
+Rc = ZmqSocketRec.SockBind(hSocket, lpszServerAddr)
+
+Printl("Bind an IP address: " & lpszServerAddr)
+
+lTotal = 0
+
+While %TRUE
+  lTotal = lTotal + 1
+
+  ZmqSocketRec.SockRecv(hSocket, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+
+  Sleep 2
+
+  Printl("Received: ")
+  Printl(lpszRecvBuffer)
+
+  lpszSendMessage = "Hi " & lTotal
+  ZmqSocketRec.SockSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+Wend
+
+ZmqSocketRec.SockClose(hSocket)
+ZmqContextRec.Shutdown(hContext)
