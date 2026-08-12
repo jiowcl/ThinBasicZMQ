@@ -68,9 +68,10 @@ Samples:
 |--|---------------------------|------------------------|
 | Coverage | Full procedural + Type wrapper | Core subset + `ZmqLibraryInit` |
 | libzmq load | `LibPath.inc` (process CWD) | `ZmqLibraryInit(path)` in C module |
-| Build | None (includes only) | `SDK\C\build.bat` → `thinBasic_ZeroMQ.dll` |
+| Build | None (includes only) | `SDK\C\build_pelles.bat` → `thinBasic_ZeroMQ.dll` |
+| Constants | `$ZMQ_*` in `Enums.inc` | `%ZMQ_*` registered by the module |
 
-See [SDK/C/README.md](SDK/C/README.md) for build and install steps.
+See [SDK/C/README.md](SDK/C/README.md) for build, install, and the **ABI contract** (return `LONG` in EAX, `ParseLong`, `ParseString As Ext`). Do not mix `#INCLUDE` Core files with `USES "ZeroMQ"`.
 
 Typical includes:
 
@@ -108,7 +109,8 @@ Methods that are not reserved words (for example `CurveKeypair`, `StopwatchStart
 
 ## How to Build
 
-Building requires ThinBasic Interpreter and test under Windows 11.  
+Native examples need only the ThinBasic interpreter (32-bit) and `Library\x86`.  
+The SDK module is built with Pelles C: `SDK\C\build_pelles.bat` (see [SDK/C/README.md](SDK/C/README.md)).  
 Type features require ThinBasic 1.4.0 and above.  
 
 ## Example

@@ -15,16 +15,16 @@ set of ZeroMQ keywords. This complements the native `#INCLUDE` API in `ThinBasic
 ## Prerequisites  
 
 - **ThinBasic** 32-bit (x86)  
-- **ThinBasic SDK** (`C:\thinBasic\SDK\GCC\Lib\thinCore.lib`)  
-- **32-bit MinGW toolchain** (`i686-w64-mingw32-gcc` recommended)  
-- **32-bit Pelles C toolchain**  
+- **32-bit Pelles C** (supported build: `build_pelles.bat`)  
 - Package **x86** `libzmq.dll` + `libsodium.dll` under `ThinBasicZMQ\Library\x86\`  
+
+Optional: 32-bit MinGW (`i686-w64-mingw32-gcc`) and `C:\thinBasic\SDK\GCC\Lib\thinCore.lib` for `build.bat`. That path is not the ABI used by the Pelles module.
 
 > Do **not** use a 64-bit compiler output. ThinBasic cannot load x64 modules.
 
 ## Build
 
-### Option A — Pelles C (recommended if installed)
+### Option A — Pelles C (supported)
 
 ```bat
 cd SDK\C
@@ -36,14 +36,15 @@ Does **not** link `thinCore.lib`; `tb_thincore.c` resolves thinCore APIs at runt
 (`_thinBasic_LoadSymbol` cdecl + `thinBasic_ParseLong` stdcall). Keywords are registered
 as `thinBasic_ReturnCodeLong`.
 
-### Option B — MinGW (i686-w64-mingw32-gcc)
+### Option B — MinGW (not the Pelles ABI path)
 
 ```bat
 cd SDK\C
 build.bat
 ```
 
-Set `THINBASIC_SDK` inside `build.bat` if ThinBasic is not installed under `C:\thinBasic`.
+Links `thinCore.lib` and does **not** compile `tb_thincore.c`. Set `THINBASIC_SDK`
+inside `build.bat` if ThinBasic is not installed under `C:\thinBasic`.
 
 ## Install  
 
@@ -57,13 +58,15 @@ copy SDK\C\bin\thinBasic_ZeroMQ.dll C:\thinBasic\Lib\
 USES "CONSOLE"
 USES "ZeroMQ"
 
-ZmqLibraryInit APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+ZmqLibraryInit(APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86")
 
 Dim hCtx As Long
 hCtx = ZmqCtxNew()
 ' ...
-ZmqLibraryShutdown
+ZmqLibraryShutdown()
 ```
+
+Keywords require parentheses. Do not `#INCLUDE` `Core\ZeroMQ.inc` in the same script as `USES "ZeroMQ"`.
 
 Run the smoke test:
 
@@ -85,17 +88,24 @@ C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkPubServer.tbasic"
 C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkSubClient.tbasic"
 ```
 
-## Notes
+## ABI contract
 
-- Keywords return **Long** via `thinBasic_ReturnCodeLong` (EAX). Official PowerBASIC
-  modules use `EXT` / `thinBasic_ReturnNumber`; returning C `double` left values on
-  the FPU stack and caused ACCESS_VIOLATION after several consecutive keyword calls.
-- Numeric parameters use `thinBasic_ParseLong` (ByRef stdcall), matching
-  [thinBasic_MSXML2](https://github.com/ThinBASIC/thinBasic_MSXML2).
-- `thinBasic_ParseString` is `As Ext` in the official SDK: the C thunk must
-  consume ST(0) or a later keyword call can ACCESS_VIOLATION.
-- Numeric equates use the `%` prefix (`%ZMQ_REP`), same as official `thinBasic_AddEquate`.
-- `LoadLocalSymbols` returns 0, as in the official module and SDK anatomy docs.  
+Match [thinBasic_MSXML2](https://github.com/ThinBASIC/thinBasic_MSXML2) and official `thinCore.inc`.
+Violating any row below has caused `0xC0000005` (ACCESS_VIOLATION) / a black console.
+
+| Topic | Do | Do not |
+|-------|----|--------|
+| Keyword return | Register `thinBasic_ReturnCodeLong`. Executor returns `LONG` in **EAX**. | `thinBasic_ReturnNumber`, C `double`, or 10-byte `EXT` in ST(0). Official PB modules return `EXT`; a C `double` is not the same size and leaves the FPU dirty. |
+| Integers | `thinBasic_ParseLong` (ByRef `LONG`, stdcall). Keep the value as `LONG`. | `thinBasic_ParseDouble`. Do not convert `LONG` → `double` (that writes ST(0); `Printl` / `FNINIT` can hide the crash). |
+| Strings | `thinBasic_ParseString` is `Function (…) As Ext`. The C thunk must be typed as returning `double` so the compiler **pops ST(0)**. Length comes from `strlen` on the ByRef pointer. | Treat EAX or the `EXT` as success or as the string length. The `EXT` is the numeric value of the text (0 for `"quotes"`). Leaving ST(0) live will AV on the next string keyword (`ZmqSetsockoptStr` then `ZmqConnect`). |
+| Equates | `"%ZMQ_REP"` via cdecl `_thinBasic_AddEquate(char*, char*, DWORD, DWORD)`. | Name without `%`. Do not call the stdcall `thinBasic_AddEquate` with a `DWORD` where PB passes `EXT` (stack misaligned; `USES "ZeroMQ"` crashes). |
+| Registration vs parse | Load cdecl `_thinBasic_LoadSymbol` / `_thinBasic_AddEquate`. Parse stdcall `thinBasic_ParseLong` / `thinBasic_ParseString` / `thinBasic_Check*`. | Link Pelles C against GCC `thinCore.lib` (calling-convention mismatch). |
+| Module entry | Export `_LoadLocalSymbols` / `_UnLoadLocalSymbols` (cdecl). Both return **0**. `GetModuleHandle("thinCore.dll")` first; do not `FreeLibrary` the interpreter’s copy. | Return 1 from `LoadLocalSymbols`. |
+| Handles | 32-bit `LONG` (x86 pointers fit). | |
+
+Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports at runtime.
+
+## Keywords  
 
 | Keyword | Notes |
 |---------|--------|
@@ -126,9 +136,10 @@ Equates registered by the module (use as `%ZMQ_REQ`, etc.): socket types, `%ZMQ_
 
 ```
 SDK/C/
-├── build.bat
-├── include/          thinCore.h, zmq_dynload.h, tb_parse.h, zmq_enums.h
-├── src/              thinBasic_ZeroMQ.c, zmq_dynload.c, tb_zmq_exec.c
+├── build_pelles.bat  supported (runtime thinCore bind, no thinCore.lib)
+├── build.bat         MinGW + thinCore.lib (not the Pelles ABI path)
+├── include/          thinCore.h (constants), tb_thincore.h, tb_parse.h, …
+├── src/              tb_thincore.c, tb_zmq_exec.c, thinBasic_ZeroMQ.c, zmq_dynload.c
 ├── lib/              thinBasic_ZeroMQ.def
 ├── examples/         ZmqSdkSmoke.tbasic, REQ/REP, PUB/SUB
 └── bin/              build output (gitignored)

@@ -1,8 +1,10 @@
 /*
- * thinCore.h — ThinBasic SDK interface (excerpt).
+ * thinCore.h — ThinBasic SDK constants (excerpt).
  *
- * Pelles C / thinCore.dll uses __stdcall exports (thinBasic_*).
- * MinGW thinCore.lib uses __cdecl exports (_thinBasic_*); use build.bat path for that.
+ * Runtime bindings live in tb_thincore.c (see SDK/C/README.md “ABI contract”).
+ * Do not call these names through this header: ParseString is As Ext (ST(0)),
+ * AddEquate/LoadSymbol used here are the cdecl _thinBasic_* exports, and
+ * ParseDouble is unused (keywords parse with ParseLong).
  *
  * Copyright (c) Eros Olmi / ThinBasic project.
  * Copyright (c) Ji-Feng Tsai. MIT License.
@@ -46,12 +48,7 @@ typedef VARIANT *LPVARIANT;
 #define thinBasic_ON                       1
 #define thinBasic_OFF                      0
 
-DWORD thinBasic_AddEquate(char *szEquate, char *szStringValue, DWORD dwNumericValue, DWORD dwConstType);
-DWORD thinBasic_LoadSymbol(char *szFunctionName, DWORD dwReturnType, void *FunctionCode, DWORD dwForceOverWrite);
-double thinBasic_ParseDouble(void);
-DWORD thinBasic_ParseString(char **pszString);
-DWORD thinBasic_CheckOpenParens(DWORD HideError, DWORD AutoPutBack);
-DWORD thinBasic_CheckComma(DWORD HideError, DWORD AutoPutBack);
-DWORD thinBasic_CheckCloseParens(DWORD HideError, DWORD AutoPutBack);
+/* Function prototypes are intentionally omitted. Wrong C types here caused AVs
+ * (ParseString as DWORD, ParseDouble returning double). Use tb_thincore.h. */
 
 #endif /* THINCORE_H */
