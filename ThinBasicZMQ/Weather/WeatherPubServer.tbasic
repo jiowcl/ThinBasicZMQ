@@ -1,0 +1,72 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once "..\Core\ZeroMQWrapper.inc"
+
+' Weather-style PUB server (JSON payload on topic "weather").
+' Uses simulated OpenWeatherMap-like JSON so no API key is required.
+' Pair with WeatherSubClient.tbasic.
+
+Dim ZmqContextRec As LibZmqContext
+Dim ZmqSocketRec As LibZmqSocket
+Dim ZmqRuntimeRec As LibZmqRuntime
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global Rc As Long
+Global lpszTopic As String
+Global lpszJsonWeather As String
+Global nTemp As Long
+Global nHumidity As Long
+Global nLoop As Long
+
+Function RndRange(ByVal first As Double, ByVal last As Double) As Double
+  Function = Rnd * (last - first) + first
+End Function
+
+Function BuildWeatherJson() As String
+  nTemp = Int(RndRange(288, 308))
+  nHumidity = Int(RndRange(40, 90))
+  Function = "{""name"":""Taiwan"",""main"":{""temp"":" & Str$(nTemp) & ",""humidity"":" & Str$(nHumidity) & "},""weather"":[{""description"":""clouds""}]}"
+End Function
+
+lpszServerAddr = "tcp://*:1692"
+
+hContext = ZmqContextRec.NewCtx()
+hSocket = ZmqSocketRec.NewSocket(hContext, $ZMQ_PUB)
+Rc = ZmqSocketRec.SockBind(hSocket, lpszServerAddr)
+
+If Rc <> 0 Then
+  Printl("Bind failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+Else
+  Printl("Bind an IP address: " & lpszServerAddr)
+  Sleep 200
+  Randomize
+
+  ' Finite demo loop (Ctrl+C / close console to stop early).
+  For nLoop = 1 To 20
+    lpszTopic = "weather"
+    lpszJsonWeather = BuildWeatherJson()
+
+    If ZmqSocketRec.SockSend(hSocket, StrPtr(lpszTopic), Len(lpszTopic), $ZMQ_SNDMORE) = -1 Then
+      Printl("Send topic failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+    ElseIf ZmqSocketRec.SockSend(hSocket, StrPtr(lpszJsonWeather), Len(lpszJsonWeather), 0) = -1 Then
+      Printl("Send message failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+    Else
+      Printl("Published weather JSON (" & Len(lpszJsonWeather) & " chars)")
+    End If
+
+    Sleep 500
+  Next
+End If
+
+ZmqSocketRec.SockClose(hSocket)
+ZmqContextRec.Shutdown(hContext)
+
+Printl("Completed!")
+Console_Read()

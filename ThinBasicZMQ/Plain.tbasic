@@ -1,0 +1,171 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once ".\Core\ZeroMQ.inc"
+
+' PLAIN end-to-end REQ/REP with in-process ZAP handler (single-threaded poll).
+
+Global lpszClientAddr As String
+Global lpszZapDomain As String
+Global lpszUsername As String
+Global lpszPassword As String
+Global hContext As Long
+Global hSocketZap As Long
+Global hSocketRep As Long
+Global hSocketReq As Long
+Global lpszSendMessage As String
+Global lpszRecvBuffer As Asciiz * 256
+Global nRecvBytes As Long
+Global nLoop As Long
+Global nReplyCount As Long
+Global nMechanism As Long
+Global nRc As Long
+Global items As ZmqPollItemT
+Global sVersion As String
+Global sSequence As String
+Global sDomain As String
+Global sAddress As String
+Global sRoutingId As String
+Global sMechanism As String
+Global sUser As String
+Global sPass As String
+Global sEmpty As String
+
+Function RecvFrameStr(ByVal hSock As Long) As String
+  Local nBytes As Long
+  Local sBuf As Asciiz * 256
+
+  nBytes = ZmqRecv(hSock, VarPtr(sBuf), SizeOf(sBuf), 0)
+  If nBytes < 0 Then
+    Function = ""
+  Else
+    Function = Left$(sBuf, nBytes)
+  End If
+End Function
+
+Sub HandleZapOnce()
+  items.socket = hSocketZap
+  items.fd = 0
+  items.events = $ZMQ_POLLIN
+  items.revents = 0
+  nRc = ZmqPoll(VarPtr(items), 1, 50)
+  If nRc <= 0 Then Exit Sub
+
+  sVersion = RecvFrameStr(hSocketZap)
+  If sVersion = "" Then Exit Sub
+
+  sSequence = RecvFrameStr(hSocketZap)
+  sDomain = RecvFrameStr(hSocketZap)
+  sAddress = RecvFrameStr(hSocketZap)
+  sRoutingId = RecvFrameStr(hSocketZap)
+  sMechanism = RecvFrameStr(hSocketZap)
+  sUser = RecvFrameStr(hSocketZap)
+  sPass = RecvFrameStr(hSocketZap)
+
+  ZmqSend(hSocketZap, StrPtr(sVersion), Len(sVersion), $ZMQ_SNDMORE)
+  ZmqSend(hSocketZap, StrPtr(sSequence), Len(sSequence), $ZMQ_SNDMORE)
+
+  sEmpty = ""
+  If sUser = lpszUsername And sPass = lpszPassword Then
+    lpszSendMessage = "200"
+    ZmqSend(hSocketZap, StrPtr(lpszSendMessage), Len(lpszSendMessage), $ZMQ_SNDMORE)
+    lpszSendMessage = "OK"
+    ZmqSend(hSocketZap, StrPtr(lpszSendMessage), Len(lpszSendMessage), $ZMQ_SNDMORE)
+    lpszSendMessage = "anonymous"
+    ZmqSend(hSocketZap, StrPtr(lpszSendMessage), Len(lpszSendMessage), $ZMQ_SNDMORE)
+    ZmqSend(hSocketZap, StrPtr(sEmpty), 0, 0)
+  Else
+    lpszSendMessage = "400"
+    ZmqSend(hSocketZap, StrPtr(lpszSendMessage), Len(lpszSendMessage), $ZMQ_SNDMORE)
+    lpszSendMessage = "Invalid username or password"
+    ZmqSend(hSocketZap, StrPtr(lpszSendMessage), Len(lpszSendMessage), $ZMQ_SNDMORE)
+    ZmqSend(hSocketZap, StrPtr(sEmpty), 0, $ZMQ_SNDMORE)
+    ZmqSend(hSocketZap, StrPtr(sEmpty), 0, 0)
+  End If
+End Sub
+
+lpszClientAddr = "tcp://127.0.0.1:1720"
+lpszZapDomain = "plain"
+lpszUsername = "admin"
+lpszPassword = "secret"
+sEmpty = ""
+
+hContext = ZmqCtxNew()
+hSocketZap = ZmqSocket(hContext, $ZMQ_REP)
+hSocketRep = ZmqSocket(hContext, $ZMQ_REP)
+hSocketReq = ZmqSocket(hContext, $ZMQ_REQ)
+
+ZmqSetsockoptInt(hSocketZap, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketZap, $ZMQ_RCVTIMEO, 100)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_RCVTIMEO, 1000)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_RCVTIMEO, 1000)
+ZmqSetsockoptInt(hSocketReq, $ZMQ_SNDTIMEO, 1000)
+
+' ZAP endpoint must be bound before PLAIN handshake.
+ZmqBind(hSocketZap, "inproc://zeromq.zap.01")
+
+ZmqSetsockoptStr(hSocketRep, $ZMQ_ZAP_DOMAIN, lpszZapDomain)
+ZmqSetsockoptInt(hSocketRep, $ZMQ_PLAIN_SERVER, 1)
+ZmqSetsockoptStr(hSocketReq, $ZMQ_PLAIN_USERNAME, lpszUsername)
+ZmqSetsockoptStr(hSocketReq, $ZMQ_PLAIN_PASSWORD, lpszPassword)
+
+ZmqBind(hSocketRep, "tcp://127.0.0.1:1720")
+ZmqConnect(hSocketReq, lpszClientAddr)
+
+' Service ZAP while the client handshake completes.
+For nLoop = 1 To 40
+  HandleZapOnce()
+Next
+
+nMechanism = 0
+ZmqGetsockoptInt(hSocketReq, $ZMQ_MECHANISM, nMechanism)
+Printl("Client mechanism: " & nMechanism & " (PLAIN=1)")
+Printl("PLAIN REQ/REP on " & lpszClientAddr)
+
+nReplyCount = 0
+For nLoop = 1 To 3
+  HandleZapOnce()
+
+  lpszSendMessage = "From Plain Client"
+  If ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+    Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
+    HandleZapOnce()
+    Exit For
+  End If
+
+  HandleZapOnce()
+  nRecvBytes = ZmqRecv(hSocketRep, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+  If nRecvBytes < 0 Then
+    Printl("REP recv failed: " & ZmqStrerrorString(ZmqErrno()))
+    Exit For
+  End If
+
+  Printl("REP received: " & Left$(lpszRecvBuffer, nRecvBytes))
+  lpszSendMessage = "Plain Hi"
+  ZmqSend(hSocketRep, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+
+  nRecvBytes = ZmqRecv(hSocketReq, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+  If nRecvBytes < 0 Then
+    Printl("REQ recv failed: " & ZmqStrerrorString(ZmqErrno()))
+    Exit For
+  End If
+
+  Printl("Client Reply: " & Left$(lpszRecvBuffer, nRecvBytes))
+  nReplyCount = nReplyCount + 1
+Next
+
+Printl("Plain replies: " & nReplyCount)
+
+ZmqClose(hSocketReq)
+ZmqClose(hSocketRep)
+ZmqClose(hSocketZap)
+ZmqCtxShutdown(hContext)
+
+Printl("Completed!")
+Console_Read()

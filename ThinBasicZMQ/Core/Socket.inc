@@ -126,6 +126,17 @@ Function ZmqSetsockoptInt(ByVal hSocket As Long, ByVal options As Long, ByVal op
 End Function
 
 ' <summary>
+' ZmqSetsockoptStr
+' </summary>
+' <param name="hSocket">Long</param>
+' <param name="options">Long</param>
+' <param name="optval">String</param>
+' <returns>Returns long.</returns>
+Function ZmqSetsockoptStr(ByVal hSocket As Long, ByVal options As Long, ByVal optval As String) As Long
+  Function = ZmqSetsockopt(hSocket, options, StrPtr(optval), Len(optval))
+End Function
+
+' <summary>
 ' ZmqGetsockoptInt
 ' </summary>
 ' <param name="hSocket">Long</param>

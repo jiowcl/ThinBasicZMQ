@@ -38,7 +38,8 @@ ThinBasicZMQ/
 ├── Library/
 │   └── x86/              # libzmq.dll + libsodium.dll (x86)
 ├── Module/               # Type-wrapper examples (Pub/Sub, REQ/REP)
-└── *.tbasic              # Procedural examples (incl. Monitor, Thread, Proxy, …)
+├── Weather/              # Weather-style PUB/SUB scenario
+└── *.tbasic              # Procedural examples (incl. Monitor, Thread, Curve, Plain, …)
 ```
 
 Samples:
@@ -51,6 +52,9 @@ Samples:
 | `Monitor.tbasic` | `zmq_socket_monitor` (connect PAIR **before** Bind) |
 | `Thread.tbasic` | `zmq_threadstart` / `zmq_threadclose` (`Function … CDECL`; join before other script work) |
 | `Proxy.tbasic` / `Poll.tbasic` | Proxy and poll |
+| `Curve.tbasic` | CURVE end-to-end REQ/REP |
+| `Plain.tbasic` | PLAIN + in-process ZAP (single-threaded poll) |
+| `Weather\WeatherPubServer.tbasic` / `WeatherSubClient.tbasic` | Weather-style JSON PUB/SUB |
 | `CurveKeypair.tbasic` / `Z85.tbasic` | Security helpers |
 
 Typical includes:
@@ -79,6 +83,7 @@ Some ThinBasic reserved words cannot be Type method names, so the wrapper uses r
 | Socket | `ZmqSend` / `ZmqRecv` | `LibZmqSocket` | `SockSend` / `SockRecv` |
 | Socket | `ZmqClose` | `LibZmqSocket` | `SockClose` |
 | Socket | `ZmqSetsockoptInt` | `LibZmqSocket` | `SockSetsockoptInt` |
+| Socket | `ZmqSetsockoptStr` | `LibZmqSocket` | `SockSetsockoptStr` |
 | Msg | `ZmqMsgInit` / `ZmqMsgSend` | `LibZmqMsg` | `MsgInit` / `MsgSend` |
 | Poll | `ZmqPoll` | `LibZmqPoll` | `DoPoll` |
 | Proxy | `ZmqProxy` | `LibZmqProxy` | `DoProxy` |
@@ -214,10 +219,6 @@ ZmqContextRec.Shutdown(hContext)
 Copyright (c) 2019-2026 Ji-Feng Tsai.  
 ThinBasic Copyright (c) Eros Olmi [ThinBASIC Interpreter](https://github.com/ThinBASIC).  
 Code released under the MIT license.  
-
-## TODO
-
-- PLAIN/CURVE end-to-end and weather-style samples
 
 ## Donation
 

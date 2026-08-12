@@ -224,6 +224,17 @@ Type LibZmqSocket
   End Function
 
   ' <summary>
+  ' SockSetsockoptStr
+  ' </summary>
+  ' <param name="hSocket">Long</param>
+  ' <param name="options">Long</param>
+  ' <param name="optval">String</param>
+  ' <returns>Returns long.</returns>
+  Function SockSetsockoptStr(ByVal hSocket As Long, ByVal options As Long, ByVal optval As String) As Long
+    Function = ZmqSetsockoptStr(hSocket, options, optval)
+  End Function
+
+  ' <summary>
   ' SockGetsockopt
   ' </summary>
   ' <param name="hSocket">Long</param>

@@ -1,0 +1,65 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+USES "CONSOLE"
+
+#INCLUDE Once "..\Core\ZeroMQWrapper.inc"
+
+' Weather-style SUB client for topic "weather".
+' Pair with WeatherPubServer.tbasic.
+
+Dim ZmqContextRec As LibZmqContext
+Dim ZmqSocketRec As LibZmqSocket
+Dim ZmqRuntimeRec As LibZmqRuntime
+
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global lpszSubscribe As String
+Global Rc As Long
+Global lpszTopicBuffer As Asciiz * 256
+Global lpszRecvBuffer As Asciiz * 2048
+Global TopicBytes As Long
+Global MessageBytes As Long
+Global nLoop As Long
+
+lpszServerAddr = "tcp://localhost:1692"
+lpszSubscribe = "weather"
+
+hContext = ZmqContextRec.NewCtx()
+hSocket = ZmqSocketRec.NewSocket(hContext, $ZMQ_SUB)
+
+' Subscribe before connect to reduce missed early messages.
+ZmqSocketRec.SockSetsockopt(hSocket, $ZMQ_SUBSCRIBE, StrPtr(lpszSubscribe), Len(lpszSubscribe))
+ZmqSocketRec.SockSetsockoptInt(hSocket, $ZMQ_RCVTIMEO, 3000)
+Rc = ZmqSocketRec.SockConnect(hSocket, lpszServerAddr)
+
+If Rc <> 0 Then
+  Printl("Connect failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+Else
+  Printl("Connected: " & lpszServerAddr & " (subscribe=" & lpszSubscribe & ")")
+
+  For nLoop = 1 To 10
+    TopicBytes = ZmqSocketRec.SockRecv(hSocket, VarPtr(lpszTopicBuffer), SizeOf(lpszTopicBuffer), 0)
+
+    If TopicBytes = -1 Then
+      Printl("Recv topic failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+    Else
+      MessageBytes = ZmqSocketRec.SockRecv(hSocket, VarPtr(lpszRecvBuffer), SizeOf(lpszRecvBuffer), 0)
+
+      If MessageBytes = -1 Then
+        Printl("Recv message failed: " & ZmqRuntimeRec.GetStrerror(ZmqRuntimeRec.GetErrno()))
+      Else
+        Printl(Left$(lpszRecvBuffer, MessageBytes))
+      End If
+    End If
+  Next
+End If
+
+ZmqSocketRec.SockClose(hSocket)
+ZmqContextRec.Shutdown(hContext)
+
+Printl("Completed!")
+Console_Read()
