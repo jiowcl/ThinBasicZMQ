@@ -697,3 +697,42 @@ LONG __cdecl Exec_ZmqGetsockoptInt(void)
 
     return (LONG)optval;
 }
+
+/**
+ * @brief Generate a CURVE Z85 keypair into two caller buffers.
+ * @param void
+ * @return LONG 0 on success, -1 on failure
+ */
+LONG __cdecl Exec_ZmqCurveKeypair(void)
+{
+    LONG public_buf;
+    LONG secret_buf;
+
+    if (!tb_expect_open_parens()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&public_buf)) {
+        return -1;
+    }
+
+    if (!tb_expect_comma()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&secret_buf)) {
+        return -1;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return -1;
+    }
+
+    if (public_buf == 0 || secret_buf == 0) {
+        return -1;
+    }
+
+    return (LONG)zmq_api_curve_keypair(
+        (char *)tb_ptr_from_handle(public_buf),
+        (char *)tb_ptr_from_handle(secret_buf));
+}

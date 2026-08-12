@@ -32,5 +32,6 @@ void        zmq_api_version(int *major, int *minor, int *patch);
 int         zmq_api_has(const char *capability);
 int         zmq_api_setsockopt(void *socket, int option, const void *optval, size_t optvallen);
 int         zmq_api_getsockopt(void *socket, int option, void *optval, size_t *optvallen);
+int         zmq_api_curve_keypair(char *z85_public, char *z85_secret);
 
 #endif /* ZMQ_DYNLOAD_H */

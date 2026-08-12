@@ -22,9 +22,9 @@ Optional: 32-bit MinGW (`i686-w64-mingw32-gcc`) and `C:\thinBasic\SDK\GCC\Lib\th
 
 > Do **not** use a 64-bit compiler output. ThinBasic cannot load x64 modules.
 
-## Build
+## How to Build  
 
-### Option A — Pelles C (supported)
+### Option A — Pelles C (supported)  
 
 ```bat
 cd SDK\C
@@ -36,7 +36,7 @@ Does **not** link `thinCore.lib`; `tb_thincore.c` resolves thinCore APIs at runt
 (`_thinBasic_LoadSymbol` cdecl + `thinBasic_ParseLong` stdcall). Keywords are registered
 as `thinBasic_ReturnCodeLong`.
 
-### Option B — MinGW (not the Pelles ABI path)
+### Option B — MinGW (not the Pelles ABI path)  
 
 ```bat
 cd SDK\C
@@ -88,6 +88,12 @@ C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkPubServer.tbasic"
 C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkSubClient.tbasic"
 ```
 
+CURVE REQ/REP (single process):
+
+```bat
+C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkCurve.tbasic"
+```
+
 ## ABI contract
 
 Match [thinBasic_MSXML2](https://github.com/ThinBASIC/thinBasic_MSXML2) and official `thinCore.inc`.
@@ -119,9 +125,15 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 | `ZmqErrno` / `ZmqStrerror` | Error helpers (`ZmqStrerror` returns ASCIIZ pointer) |
 | `ZmqVersionMajor` / `Minor` / `Patch` | Runtime version |
 | `ZmqHas(capability)` | `zmq_has` |
+| `ZmqCurveKeypair(pubPtr, secPtr)` | Fill two Z85 buffers (`StrPtr` / `VarPtr`, ≥41 bytes); 0 on success |
 
-Equates registered by the module (use as `%ZMQ_REQ`, etc.): socket types, `%ZMQ_LINGER`,
-`%ZMQ_RCVTIMEO`, `%ZMQ_SNDTIMEO`, `%ZMQ_DONTWAIT`, `%ZMQ_SNDMORE`, `%ZMQ_SUBSCRIBE`.
+Equates registered by the module (use as `%ZMQ_REQ`, etc.):
+
+- Socket types: `%ZMQ_PAIR` … `%ZMQ_STREAM` (incl. `%ZMQ_PUSH` / `%ZMQ_PULL`)
+- Flags / common opts: `%ZMQ_DONTWAIT`, `%ZMQ_SNDMORE`, `%ZMQ_SUBSCRIBE`, `%ZMQ_UNSUBSCRIBE`,
+  `%ZMQ_LINGER`, `%ZMQ_RCVTIMEO`, `%ZMQ_SNDTIMEO`
+- Security: `%ZMQ_MECHANISM`, `%ZMQ_PLAIN_*`, `%ZMQ_CURVE_*`, `%ZMQ_ZAP_DOMAIN`,
+  `%ZMQ_NULL` / `%ZMQ_PLAIN` / `%ZMQ_CURVE`, `%ZMQ_CURVE_KEYSIZE_Z85`
 
 ## Native vs SDK  
 
@@ -141,7 +153,7 @@ SDK/C/
 ├── include/          thinCore.h (constants), tb_thincore.h, tb_parse.h, …
 ├── src/              tb_thincore.c, tb_zmq_exec.c, thinBasic_ZeroMQ.c, zmq_dynload.c
 ├── lib/              thinBasic_ZeroMQ.def
-├── examples/         ZmqSdkSmoke.tbasic, REQ/REP, PUB/SUB
+├── examples/         ZmqSdkSmoke, REQ/REP, PUB/SUB, Curve
 └── bin/              build output (gitignored)
 ```
 
@@ -151,7 +163,7 @@ Copyright (c) 2019-2026 Ji-Feng Tsai.
 ThinBasic Copyright (c) Eros Olmi [ThinBASIC Interpreter](https://github.com/ThinBASIC).  
 Code released under the MIT license.  
 
-## Donation
+## Donation  
 
 If this application help you reduce time to coding, you can give me a cup of coffee :)
 

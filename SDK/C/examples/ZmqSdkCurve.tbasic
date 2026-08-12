@@ -1,0 +1,106 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+' SDK CURVE end-to-end REQ/REP (single-threaded).
+' Prerequisite: copy SDK\C\bin\thinBasic_ZeroMQ.dll to C:\thinBasic\Lib\
+
+USES "CONSOLE"
+USES "ZeroMQ"
+
+Global lpszLibPath As String
+Global lpszClientAddr As String
+Global hContext As Long
+Global hSocketRep As Long
+Global hSocketReq As Long
+Global lpszServerPublic As String * 41
+Global lpszServerSecret As String * 41
+Global lpszClientPublic As String * 41
+Global lpszClientSecret As String * 41
+Global lpszSendMessage As String
+Global lpszRecvBuffer As String * 64
+Global nRecvBytes As Long
+Global nLoop As Long
+Global nReplyCount As Long
+Global nMechanism As Long
+
+lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+lpszClientAddr = "tcp://127.0.0.1:1742"
+
+If ZmqLibraryInit(lpszLibPath) = 0 Then
+  Printl("Failed to load libzmq from " & lpszLibPath)
+  Console_Read()
+  Stop
+End If
+
+If ZmqHas("curve") = 0 Then
+  Printl("libzmq was built without CURVE support (zmq_has(""curve"") = 0).")
+ElseIf ZmqCurveKeypair(StrPtr(lpszServerPublic), StrPtr(lpszServerSecret)) <> 0 Or _
+       ZmqCurveKeypair(StrPtr(lpszClientPublic), StrPtr(lpszClientSecret)) <> 0 Then
+  Printl("CurveKeypair failed, errno=" & ZmqErrno())
+Else
+  hContext = ZmqCtxNew()
+  hSocketRep = ZmqSocket(hContext, %ZMQ_REP)
+  hSocketReq = ZmqSocket(hContext, %ZMQ_REQ)
+
+  ZmqSetsockoptInt(hSocketRep, %ZMQ_LINGER, 0)
+  ZmqSetsockoptInt(hSocketReq, %ZMQ_LINGER, 0)
+  ZmqSetsockoptInt(hSocketRep, %ZMQ_RCVTIMEO, 2000)
+  ZmqSetsockoptInt(hSocketReq, %ZMQ_RCVTIMEO, 2000)
+  ZmqSetsockoptInt(hSocketReq, %ZMQ_SNDTIMEO, 2000)
+
+  ZmqSetsockoptInt(hSocketRep, %ZMQ_CURVE_SERVER, 1)
+  ZmqSetsockoptStr(hSocketRep, %ZMQ_CURVE_SECRETKEY, Left$(lpszServerSecret, %ZMQ_CURVE_KEYSIZE_Z85))
+
+  ZmqSetsockoptStr(hSocketReq, %ZMQ_CURVE_PUBLICKEY, Left$(lpszClientPublic, %ZMQ_CURVE_KEYSIZE_Z85))
+  ZmqSetsockoptStr(hSocketReq, %ZMQ_CURVE_SECRETKEY, Left$(lpszClientSecret, %ZMQ_CURVE_KEYSIZE_Z85))
+  ZmqSetsockoptStr(hSocketReq, %ZMQ_CURVE_SERVERKEY, Left$(lpszServerPublic, %ZMQ_CURVE_KEYSIZE_Z85))
+
+  ZmqBind(hSocketRep, lpszClientAddr)
+  ZmqConnect(hSocketReq, lpszClientAddr)
+  Sleep 100
+
+  nMechanism = ZmqGetsockoptInt(hSocketReq, %ZMQ_MECHANISM)
+  Printl("Client mechanism: " & nMechanism & " (CURVE=" & %ZMQ_CURVE & ")")
+  Printl("CURVE REQ/REP on " & lpszClientAddr)
+  Printl("Server Public: " & Left$(lpszServerPublic, %ZMQ_CURVE_KEYSIZE_Z85))
+
+  nReplyCount = 0
+  For nLoop = 1 To 3
+    lpszSendMessage = "From Curve Client"
+    If ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+      Printl("Send failed, errno=" & ZmqErrno())
+      Exit For
+    End If
+
+    nRecvBytes = ZmqRecv(hSocketRep, StrPtr(lpszRecvBuffer), 64, 0)
+    If nRecvBytes < 0 Then
+      Printl("REP recv failed, errno=" & ZmqErrno())
+      Exit For
+    End If
+
+    Printl("REP received: " & Left$(lpszRecvBuffer, nRecvBytes))
+    lpszSendMessage = "Curve Hi"
+    ZmqSend(hSocketRep, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+
+    nRecvBytes = ZmqRecv(hSocketReq, StrPtr(lpszRecvBuffer), 64, 0)
+    If nRecvBytes < 0 Then
+      Printl("REQ recv failed, errno=" & ZmqErrno())
+      Exit For
+    End If
+
+    Printl("Client Reply: " & Left$(lpszRecvBuffer, nRecvBytes))
+    nReplyCount = nReplyCount + 1
+  Next
+
+  Printl("Curve replies: " & nReplyCount)
+
+  ZmqClose(hSocketReq)
+  ZmqClose(hSocketRep)
+  ZmqCtxShutdown(hContext)
+End If
+
+ZmqLibraryShutdown()
+Printl("Completed!")
+Console_Read()

@@ -28,6 +28,7 @@ typedef void  (__cdecl *zmq_version_fn)(int *, int *, int *);
 typedef int   (__cdecl *zmq_has_fn)(const char *);
 typedef int   (__cdecl *zmq_setsockopt_fn)(void *, int, const void *, size_t);
 typedef int   (__cdecl *zmq_getsockopt_fn)(void *, int, void *, size_t *);
+typedef int   (__cdecl *zmq_curve_keypair_fn)(char *, char *);
 
 typedef struct zmq_api_table {
     HMODULE             module;
@@ -47,6 +48,7 @@ typedef struct zmq_api_table {
     zmq_has_fn          has;
     zmq_setsockopt_fn   setsockopt;
     zmq_getsockopt_fn   getsockopt;
+    zmq_curve_keypair_fn curve_keypair;
 } zmq_api_table;
 
 static zmq_api_table g_zmq;
@@ -73,6 +75,8 @@ static int zmq_bind_required_symbols(void)
     g_zmq.has = (zmq_has_fn)GetProcAddress(g_zmq.module, "zmq_has");
     g_zmq.setsockopt = (zmq_setsockopt_fn)GetProcAddress(g_zmq.module, "zmq_setsockopt");
     g_zmq.getsockopt = (zmq_getsockopt_fn)GetProcAddress(g_zmq.module, "zmq_getsockopt");
+    /* Optional: older builds may lack CURVE helpers. */
+    g_zmq.curve_keypair = (zmq_curve_keypair_fn)GetProcAddress(g_zmq.module, "zmq_curve_keypair");
 
     return g_zmq.ctx_new && g_zmq.ctx_term && g_zmq.ctx_shutdown && g_zmq.socket &&
            g_zmq.close && g_zmq.bind && g_zmq.connect && g_zmq.send && g_zmq.recv &&
@@ -357,4 +361,19 @@ int zmq_api_setsockopt(void *socket, int option, const void *optval, size_t optv
 int zmq_api_getsockopt(void *socket, int option, void *optval, size_t *optvallen)
 {
     return g_zmq.loaded ? g_zmq.getsockopt(socket, option, optval, optvallen) : -1;
+}
+
+/**
+ * @brief Generate a CURVE keypair (Z85, 40 chars + NUL in each buffer).
+ * @param z85_public
+ * @param z85_secret
+ * @return int
+ */
+int zmq_api_curve_keypair(char *z85_public, char *z85_secret)
+{
+    if (!g_zmq.loaded || g_zmq.curve_keypair == NULL || z85_public == NULL || z85_secret == NULL) {
+        return -1;
+    }
+
+    return g_zmq.curve_keypair(z85_public, z85_secret);
 }

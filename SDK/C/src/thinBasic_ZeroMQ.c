@@ -39,6 +39,7 @@ LONG __cdecl Exec_ZmqRecv(void);
 LONG __cdecl Exec_ZmqSetsockoptInt(void);
 LONG __cdecl Exec_ZmqSetsockoptStr(void);
 LONG __cdecl Exec_ZmqGetsockoptInt(void);
+LONG __cdecl Exec_ZmqCurveKeypair(void);
 
 /**
  * @brief Register a symbol.
@@ -93,6 +94,7 @@ static void tb_zmq_register_symbols(void)
     tb_zmq_register_symbol("ZmqSetsockoptInt", thinBasic_ReturnCodeLong, &Exec_ZmqSetsockoptInt);
     tb_zmq_register_symbol("ZmqSetsockoptStr", thinBasic_ReturnCodeLong, &Exec_ZmqSetsockoptStr);
     tb_zmq_register_symbol("ZmqGetsockoptInt", thinBasic_ReturnCodeLong, &Exec_ZmqGetsockoptInt);
+    tb_zmq_register_symbol("ZmqCurveKeypair", thinBasic_ReturnCodeLong, &Exec_ZmqCurveKeypair);
 }
 
 /**
@@ -109,13 +111,34 @@ static void tb_zmq_register_equates(void)
     tb_zmq_register_equate("%ZMQ_REP", ZMQ_REP);
     tb_zmq_register_equate("%ZMQ_DEALER", ZMQ_DEALER);
     tb_zmq_register_equate("%ZMQ_ROUTER", ZMQ_ROUTER);
+    tb_zmq_register_equate("%ZMQ_PULL", ZMQ_PULL);
+    tb_zmq_register_equate("%ZMQ_PUSH", ZMQ_PUSH);
+    tb_zmq_register_equate("%ZMQ_XPUB", ZMQ_XPUB);
+    tb_zmq_register_equate("%ZMQ_XSUB", ZMQ_XSUB);
+    tb_zmq_register_equate("%ZMQ_STREAM", ZMQ_STREAM);
 
     tb_zmq_register_equate("%ZMQ_SUBSCRIBE", ZMQ_SUBSCRIBE);
+    tb_zmq_register_equate("%ZMQ_UNSUBSCRIBE", ZMQ_UNSUBSCRIBE);
     tb_zmq_register_equate("%ZMQ_LINGER", ZMQ_LINGER);
     tb_zmq_register_equate("%ZMQ_RCVTIMEO", ZMQ_RCVTIMEO);
     tb_zmq_register_equate("%ZMQ_SNDTIMEO", ZMQ_SNDTIMEO);
     tb_zmq_register_equate("%ZMQ_DONTWAIT", ZMQ_DONTWAIT);
     tb_zmq_register_equate("%ZMQ_SNDMORE", ZMQ_SNDMORE);
+
+    tb_zmq_register_equate("%ZMQ_MECHANISM", ZMQ_MECHANISM);
+    tb_zmq_register_equate("%ZMQ_PLAIN_SERVER", ZMQ_PLAIN_SERVER);
+    tb_zmq_register_equate("%ZMQ_PLAIN_USERNAME", ZMQ_PLAIN_USERNAME);
+    tb_zmq_register_equate("%ZMQ_PLAIN_PASSWORD", ZMQ_PLAIN_PASSWORD);
+    tb_zmq_register_equate("%ZMQ_CURVE_SERVER", ZMQ_CURVE_SERVER);
+    tb_zmq_register_equate("%ZMQ_CURVE_PUBLICKEY", ZMQ_CURVE_PUBLICKEY);
+    tb_zmq_register_equate("%ZMQ_CURVE_SECRETKEY", ZMQ_CURVE_SECRETKEY);
+    tb_zmq_register_equate("%ZMQ_CURVE_SERVERKEY", ZMQ_CURVE_SERVERKEY);
+    tb_zmq_register_equate("%ZMQ_ZAP_DOMAIN", ZMQ_ZAP_DOMAIN);
+
+    tb_zmq_register_equate("%ZMQ_NULL", ZMQ_NULL);
+    tb_zmq_register_equate("%ZMQ_PLAIN", ZMQ_PLAIN);
+    tb_zmq_register_equate("%ZMQ_CURVE", ZMQ_CURVE);
+    tb_zmq_register_equate("%ZMQ_CURVE_KEYSIZE_Z85", ZMQ_CURVE_KEYSIZE_Z85);
 }
 
 /**

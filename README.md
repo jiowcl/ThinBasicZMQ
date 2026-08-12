@@ -61,6 +61,7 @@ Samples:
 | `SDK\C\examples\ZmqSdkSmoke.tbasic` | ThinBasic SDK module smoke test (`USES "ZeroMQ"`) |
 | `SDK\C\examples\ZmqSdkRepServer.tbasic` / `ZmqSdkReqClient.tbasic` | SDK REQ/REP (`USES "ZeroMQ"`, port 1740) |
 | `SDK\C\examples\ZmqSdkPubServer.tbasic` / `ZmqSdkSubClient.tbasic` | SDK PUB/SUB (`USES "ZeroMQ"`, port 1741, topic `quotes`) |
+| `SDK\C\examples\ZmqSdkCurve.tbasic` | SDK CURVE REQ/REP (`USES "ZeroMQ"`, port 1742) |
 
 ## Native vs ThinBasic SDK  
 
