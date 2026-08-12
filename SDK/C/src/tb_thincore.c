@@ -18,7 +18,8 @@
 typedef DWORD (__cdecl *tb_add_equate_fn)(char *, char *, DWORD, DWORD);
 typedef DWORD (__cdecl *tb_load_symbol_fn)(char *, DWORD, void *, DWORD);
 typedef void  (__stdcall *tb_parse_long_fn)(LONG *);
-typedef DWORD (__stdcall *tb_parse_string_fn)(char **);
+/* Official SDK: Function thinBasic_ParseString(...) As Ext — value is in ST(0). */
+typedef double (__stdcall *tb_parse_string_fn)(char **);
 typedef DWORD (__stdcall *tb_check_parens_fn)(DWORD, DWORD);
 typedef DWORD (__stdcall *tb_check_comma_fn)(DWORD, DWORD);
 
@@ -147,12 +148,19 @@ void tb_ParseLong(LONG *result)
 
 /**
  * @brief Parse a string.
- * @param pszString: The string to parse.
- * @return 1 if the string is valid, 0 otherwise.
+ * @param pszString: Receives a pointer to the parsed text.
+ * @return void
+ *
+ * thinBasic_ParseString returns EXT in ST(0) (numeric value of the text, or 0).
+ * Declaring the thunk as `double` makes the compiler pop ST(0). Do not treat
+ * that number as success or as the string length.
  */
-DWORD tb_ParseString(char **pszString)
+void tb_ParseString(char **pszString)
 {
-    return g_tb.parse_string(pszString);
+    volatile double ext_unused;
+
+    ext_unused = g_tb.parse_string(pszString);
+    (void)ext_unused;
 }
 
 /**

@@ -612,6 +612,7 @@ LONG __cdecl Exec_ZmqSetsockoptStr(void)
     LONG  option;
     char *value;
     DWORD len;
+    char value_copy[256];
 
     if (!tb_expect_open_parens()) {
         return 0;
@@ -641,10 +642,17 @@ LONG __cdecl Exec_ZmqSetsockoptStr(void)
         return 0;
     }
 
+    if (len >= sizeof(value_copy)) {
+        return -1;
+    }
+
+    memcpy(value_copy, value, len);
+    value_copy[len] = '\0';
+
     return (LONG)zmq_api_setsockopt(
         tb_ptr_from_handle(socket),
         (int)option,
-        value,
+        value_copy,
         len);
 }
 

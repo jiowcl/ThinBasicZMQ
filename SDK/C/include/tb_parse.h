@@ -75,13 +75,16 @@ static int tb_parse_string(char **out, DWORD *out_len)
         return 0;
     }
 
-    if (tb_ParseString(out) == 0 || *out == NULL) {
+    *out = NULL;
+    tb_ParseString(out);
+
+    if (*out == NULL) {
         return 0;
     }
 
     len = strlen(*out);
 
-    if (len == 0 || len >= 0x7FFFFFFF) {
+    if (len >= 0x7FFFFFFF) {
         return 0;
     }
 
