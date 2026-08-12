@@ -1,0 +1,4 @@
+; thinBasic_ZeroMQ.dll — exported ThinBasic module entry points.
+EXPORTS
+    _UnLoadLocalSymbols @ 1
+    _LoadLocalSymbols   @ 2

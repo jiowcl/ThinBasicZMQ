@@ -37,6 +37,8 @@ ThinBasicZMQ/
 │   └── Helper.inc
 ├── Library/
 │   └── x86/              # libzmq.dll + libsodium.dll (x86)
+├── SDK/
+│   └── C/                # ThinBasic SDK module thinBasic_ZeroMQ.dll
 ├── Module/               # Type-wrapper examples (Pub/Sub, REQ/REP)
 ├── Weather/              # Weather-style PUB/SUB scenario
 └── *.tbasic              # Procedural examples (incl. Monitor, Thread, Curve, Plain, …)
@@ -56,6 +58,17 @@ Samples:
 | `Plain.tbasic` | PLAIN + in-process ZAP (single-threaded poll) |
 | `Weather\WeatherPubServer.tbasic` / `WeatherSubClient.tbasic` | Weather-style JSON PUB/SUB |
 | `CurveKeypair.tbasic` / `Z85.tbasic` | Security helpers |
+| `SDK\C\examples\ZmqSdkSmoke.tbasic` | ThinBasic SDK module smoke test (`USES "ZeroMQ"`) |
+
+## Native vs ThinBasic SDK  
+
+| | Native (`Core\ZeroMQ.inc`) | SDK (`USES "ZeroMQ"`) |
+|--|---------------------------|------------------------|
+| Coverage | Full procedural + Type wrapper | Core subset + `ZmqLibraryInit` |
+| libzmq load | `LibPath.inc` (process CWD) | `ZmqLibraryInit(path)` in C module |
+| Build | None (includes only) | `SDK\C\build.bat` → `thinBasic_ZeroMQ.dll` |
+
+See [SDK/C/README.md](SDK/C/README.md) for build and install steps.
 
 Typical includes:
 
@@ -93,8 +106,8 @@ Methods that are not reserved words (for example `CurveKeypair`, `StopwatchStart
 
 ## How to Build
 
-Building requires ThinBasic Interpreter and test under Windows 10.  
-Type features require ThinBasic 1.4.0 and above.
+Building requires ThinBasic Interpreter and test under Windows 11.  
+Type features require ThinBasic 1.4.0 and above.  
 
 ## Example
 

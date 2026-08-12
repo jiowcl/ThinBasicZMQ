@@ -1,0 +1,12 @@
+;
+; Pelles C import library for thinCore.dll (cdecl exports with leading underscore).
+;
+LIBRARY thinCore.dll
+EXPORTS
+    _thinBasic_AddEquate
+    _thinBasic_CheckCloseParens
+    _thinBasic_CheckComma
+    _thinBasic_CheckOpenParens
+    _thinBasic_LoadSymbol
+    _thinBasic_ParseDouble
+    _thinBasic_ParseString

@@ -1,0 +1,189 @@
+/*
+ * tb_thincore.c — Load thinCore.dll exports at runtime.
+ *
+ * Registration: cdecl `_thinBasic_LoadSymbol` / `_thinBasic_AddEquate`
+ * Parsing: stdcall `thinBasic_*` (PowerBasic/FreeBASIC SDK declarations)
+ *
+ * @author Ji-Feng Tsai (Jiowcl)
+ * @email jiowcl@gmail.com
+ * @copyright Copyright (c) 2026 Jiowcl. All rights reserved.
+ */
+
+#define WIN32_LEAN_AND_MEAN
+#include "tb_thincore.h"
+
+#include <stddef.h>
+#include <string.h>
+
+typedef DWORD (__cdecl *tb_add_equate_fn)(char *, char *, DWORD, DWORD);
+typedef DWORD (__cdecl *tb_load_symbol_fn)(char *, DWORD, void *, DWORD);
+typedef void  (__stdcall *tb_parse_long_fn)(LONG *);
+typedef DWORD (__stdcall *tb_parse_string_fn)(char **);
+typedef DWORD (__stdcall *tb_check_parens_fn)(DWORD, DWORD);
+typedef DWORD (__stdcall *tb_check_comma_fn)(DWORD, DWORD);
+
+typedef struct tb_thincore_api {
+    HMODULE              module;
+    int                  loaded;
+    tb_add_equate_fn     add_equate;
+    tb_load_symbol_fn    load_symbol;
+    tb_parse_long_fn     parse_long;
+    tb_parse_string_fn   parse_string;
+    tb_check_parens_fn   check_open_parens;
+    tb_check_parens_fn   check_close_parens;
+    tb_check_comma_fn    check_comma;
+} tb_thincore_api;
+
+static tb_thincore_api g_tb;
+
+/**
+ * @brief Resolve an export.
+ * @param name: The name of the export.
+ * @return The address of the export.
+ */
+static void *tb_resolve_export(const char *name)
+{
+    FARPROC fn;
+
+    fn = GetProcAddress(g_tb.module, name);
+    
+    if (fn == NULL) {
+        return NULL;
+    }
+
+    return (void *)(INT_PTR)fn;
+}
+
+/**
+ * @brief Initialize the thinCore.dll.
+ * @return 1 if the thinCore.dll is initialized, 0 otherwise.
+ */
+int tb_thincore_init(void)
+{
+    if (g_tb.loaded) {
+        return 1;
+    }
+
+    g_tb.module = GetModuleHandleA("thinCore.dll");
+
+    if (g_tb.module == NULL) {
+        g_tb.module = LoadLibraryA("thinCore.dll");
+    }
+
+    if (g_tb.module == NULL) {
+        return 0;
+    }
+
+    g_tb.add_equate = (tb_add_equate_fn)tb_resolve_export("_thinBasic_AddEquate");
+    g_tb.load_symbol = (tb_load_symbol_fn)tb_resolve_export("_thinBasic_LoadSymbol");
+    g_tb.parse_long = (tb_parse_long_fn)tb_resolve_export("thinBasic_ParseLong");
+    g_tb.parse_string = (tb_parse_string_fn)tb_resolve_export("thinBasic_ParseString");
+    g_tb.check_open_parens = (tb_check_parens_fn)tb_resolve_export("thinBasic_CheckOpenParens");
+    g_tb.check_close_parens = (tb_check_parens_fn)tb_resolve_export("thinBasic_CheckCloseParens");
+    g_tb.check_comma = (tb_check_comma_fn)tb_resolve_export("thinBasic_CheckComma");
+
+    if (g_tb.add_equate == NULL || g_tb.load_symbol == NULL ||
+        g_tb.parse_long == NULL || g_tb.parse_string == NULL || g_tb.check_open_parens == NULL ||
+        g_tb.check_close_parens == NULL || g_tb.check_comma == NULL) {
+
+        tb_thincore_shutdown();
+
+        return 0;
+    }
+
+    g_tb.loaded = 1;
+    
+    return 1;
+}
+
+/**
+ * @brief Shutdown the thinCore.dll.
+ * @return void
+ */
+void tb_thincore_shutdown(void)
+{
+    if (g_tb.module != NULL && g_tb.module != GetModuleHandleA("thinCore.dll")) {
+        FreeLibrary(g_tb.module);
+    }
+
+    memset(&g_tb, 0, sizeof(g_tb));
+}
+
+/**
+ * @brief Add an equate.
+ * @param szEquate: The name of the equate.
+ * @param szStringValue: The value of the equate.
+ * @param dwNumericValue: The numeric value of the equate.
+ * @param dwConstType: The type of the equate.
+ * @return 1 if the equate is added, 0 otherwise.
+ */
+DWORD tb_AddEquate(char *szEquate, char *szStringValue, DWORD dwNumericValue, DWORD dwConstType)
+{
+    return g_tb.add_equate(szEquate, szStringValue, dwNumericValue, dwConstType);
+}
+
+/**
+ * @brief Load a symbol.
+ * @param szFunctionName: The name of the function to load.
+ * @param dwReturnType: The return type of the function.
+ * @param FunctionCode: The code of the function.
+ * @param dwForceOverWrite: If 1, force overwrite the function.
+ * @return 1 if the function is loaded, 0 otherwise.
+ */
+DWORD tb_LoadSymbol(char *szFunctionName, DWORD dwReturnType, void *FunctionCode, DWORD dwForceOverWrite)
+{
+    return g_tb.load_symbol(szFunctionName, dwReturnType, FunctionCode, dwForceOverWrite);
+}
+
+/**
+ * @brief Parse a long.
+ * @param result: The long to parse.
+ * @return 1 if the long is valid, 0 otherwise.
+ */
+void tb_ParseLong(LONG *result)
+{
+    g_tb.parse_long(result);
+}
+
+/**
+ * @brief Parse a string.
+ * @param pszString: The string to parse.
+ * @return 1 if the string is valid, 0 otherwise.
+ */
+DWORD tb_ParseString(char **pszString)
+{
+    return g_tb.parse_string(pszString);
+}
+
+/**
+ * @brief Check if the opening parenthesis is valid.
+ * @param HideError: If 1, hide the error.
+ * @param AutoPutBack: If 1, auto put back the opening parenthesis.
+ * @return 1 if the opening parenthesis is valid, 0 otherwise.
+ */
+DWORD tb_CheckOpenParens(DWORD HideError, DWORD AutoPutBack)
+{
+    return g_tb.check_open_parens(HideError, AutoPutBack);
+}
+
+/**
+ * @brief Check if the comma is valid.
+ * @param HideError: If 1, hide the error.
+ * @param AutoPutBack: If 1, auto put back the comma.
+ * @return 1 if the comma is valid, 0 otherwise.
+ */
+DWORD tb_CheckComma(DWORD HideError, DWORD AutoPutBack)
+{
+    return g_tb.check_comma(HideError, AutoPutBack);
+}
+
+/**
+ * @brief Check if the closing parenthesis is valid.
+ * @param HideError: If 1, hide the error.
+ * @param AutoPutBack: If 1, auto put back the closing parenthesis.
+ * @return 1 if the closing parenthesis is valid, 0 otherwise.
+ */
+DWORD tb_CheckCloseParens(DWORD HideError, DWORD AutoPutBack)
+{
+    return g_tb.check_close_parens(HideError, AutoPutBack);
+}

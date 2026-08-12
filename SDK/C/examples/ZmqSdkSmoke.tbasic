@@ -1,0 +1,61 @@
+﻿'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+' Smoke test for the ThinBasic SDK module.
+' Prerequisite: copy SDK\C\bin\thinBasic_ZeroMQ.dll to C:\thinBasic\Lib\
+
+USES "CONSOLE"
+USES "ZeroMQ"
+
+Global lpszLibPath As String
+Global hContext As Long
+Global hSocketRep As Long
+Global hSocketReq As Long
+Global lpszServerAddr As String
+Global lpszSendMessage As String
+Global nRecvBytes As Long
+Global nMajor As Long
+Global nMinor As Long
+Global nPatch As Long
+Global lpszRecvBuffer As String * 64
+
+lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+lpszServerAddr = "tcp://127.0.0.1:1735"
+
+ZmqLibraryInit(lpszLibPath)
+nMajor = ZmqVersionMajor()
+nMinor = ZmqVersionMinor()
+nPatch = ZmqVersionPatch()
+Printl("ZmqSdkSmoke starting...")
+Printl("libzmq version: " & nMajor & "." & nMinor & "." & nPatch)
+
+hContext = ZmqCtxNew()
+hSocketRep = ZmqSocket(hContext, %ZMQ_REP)
+hSocketReq = ZmqSocket(hContext, %ZMQ_REQ)
+ZmqSetsockoptInt(hSocketRep, %ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hSocketReq, %ZMQ_LINGER, 0)
+ZmqBind(hSocketRep, lpszServerAddr)
+ZmqConnect(hSocketReq, lpszServerAddr)
+Sleep 50
+
+lpszSendMessage = "From SDK Client"
+ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+nRecvBytes = ZmqRecv(hSocketRep, StrPtr(lpszRecvBuffer), 64, 0)
+If nRecvBytes > 0 Then
+  Printl("REP received: " & Left$(lpszRecvBuffer, nRecvBytes))
+  lpszSendMessage = "Hi from SDK"
+  ZmqSend(hSocketRep, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+End If
+
+nRecvBytes = ZmqRecv(hSocketReq, StrPtr(lpszRecvBuffer), 64, 0)
+If nRecvBytes > 0 Then
+  Printl("REQ reply: " & Left$(lpszRecvBuffer, nRecvBytes))
+End If
+
+ZmqClose(hSocketReq)
+ZmqClose(hSocketRep)
+ZmqLibraryShutdown()
+Printl("Completed!")
+Console_Read()

@@ -6,3 +6,10 @@
 
 ### Global ###
 *.exe
+*.o
+*.obj
+*.a
+*.lib
+SDK/C/build/
+SDK/C/bin/
+SDK/C/lib/thinCore_pelles.lib
