@@ -1,0 +1,94 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+' Single-process PUSH/PULL plus Unbind/Disconnect.
+' Prerequisite: copy SDK\C\bin\thinBasic_ZeroMQ.dll to C:\thinBasic\Lib\
+
+USES "CONSOLE"
+USES "ZeroMQ"
+
+Global lpszLibPath As String
+Global lpszBindAddr As String
+Global lpszConnectAddr As String
+Global hContext As Long
+Global hPull As Long
+Global hPush As Long
+Global Rc As Long
+Global i As Long
+Global nRecvBytes As Long
+Global nGot As Long
+Global lpszSendMessage As String
+Global lpszRecvBuffer As String * 64
+
+lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+lpszBindAddr = "tcp://127.0.0.1:1743"
+lpszConnectAddr = lpszBindAddr
+
+If ZmqLibraryInit(lpszLibPath) = 0 Then
+  Printl("Failed to load libzmq from " & lpszLibPath)
+  Console_Read()
+  Stop
+End If
+
+hContext = ZmqCtxNew()
+hPull = ZmqSocket(hContext, %ZMQ_PULL)
+hPush = ZmqSocket(hContext, %ZMQ_PUSH)
+ZmqSetsockoptInt(hPull, %ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hPush, %ZMQ_LINGER, 0)
+ZmqSetsockoptInt(hPull, %ZMQ_RCVTIMEO, 2000)
+
+Rc = ZmqBind(hPull, lpszBindAddr)
+If Rc <> 0 Then
+  Printl("Bind failed: " & ZmqStrerrorString(ZmqErrno()))
+Else
+  Rc = ZmqConnect(hPush, lpszConnectAddr)
+  If Rc <> 0 Then
+    Printl("Connect failed: " & ZmqStrerrorString(ZmqErrno()))
+  Else
+    Printl("PUSH/PULL on " & lpszConnectAddr)
+    Sleep 50
+
+    nGot = 0
+    For i = 1 To 5
+      lpszSendMessage = "Job " & i
+      If ZmqSend(hPush, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+        Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
+        Exit For
+      End If
+
+      nRecvBytes = ZmqRecv(hPull, StrPtr(lpszRecvBuffer), 64, 0)
+      If nRecvBytes < 0 Then
+        Printl("Recv failed: " & ZmqStrerrorString(ZmqErrno()))
+        Exit For
+      End If
+
+      Printl("Pulled: " & Left$(lpszRecvBuffer, nRecvBytes))
+      nGot = nGot + 1
+    Next
+
+    Printl("Jobs: " & nGot)
+
+    Rc = ZmqDisconnect(hPush, lpszConnectAddr)
+    If Rc <> 0 Then
+      Printl("Disconnect failed: " & ZmqStrerrorString(ZmqErrno()))
+    Else
+      Printl("Disconnected PUSH")
+    End If
+
+    Rc = ZmqUnbind(hPull, lpszBindAddr)
+    If Rc <> 0 Then
+      Printl("Unbind failed: " & ZmqStrerrorString(ZmqErrno()))
+    Else
+      Printl("Unbound PULL")
+    End If
+  End If
+End If
+
+ZmqClose(hPush)
+ZmqClose(hPull)
+ZmqCtxShutdown(hContext)
+ZmqLibraryShutdown()
+Printl("Completed!")
+Console_Read()

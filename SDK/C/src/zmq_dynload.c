@@ -19,7 +19,9 @@ typedef int   (__cdecl *zmq_ctx_shutdown_fn)(void *);
 typedef void *(__cdecl *zmq_socket_fn)(void *, int);
 typedef int   (__cdecl *zmq_close_fn)(void *);
 typedef int   (__cdecl *zmq_bind_fn)(void *, const char *);
+typedef int   (__cdecl *zmq_unbind_fn)(void *, const char *);
 typedef int   (__cdecl *zmq_connect_fn)(void *, const char *);
+typedef int   (__cdecl *zmq_disconnect_fn)(void *, const char *);
 typedef int   (__cdecl *zmq_send_fn)(void *, const void *, size_t, int);
 typedef int   (__cdecl *zmq_recv_fn)(void *, void *, size_t, int);
 typedef int   (__cdecl *zmq_errno_fn)(void);
@@ -39,7 +41,9 @@ typedef struct zmq_api_table {
     zmq_socket_fn       socket;
     zmq_close_fn        close;
     zmq_bind_fn         bind;
+    zmq_unbind_fn       unbind;
     zmq_connect_fn      connect;
+    zmq_disconnect_fn   disconnect;
     zmq_send_fn         send;
     zmq_recv_fn         recv;
     zmq_errno_fn        errno_fn;
@@ -66,7 +70,9 @@ static int zmq_bind_required_symbols(void)
     g_zmq.socket = (zmq_socket_fn)GetProcAddress(g_zmq.module, "zmq_socket");
     g_zmq.close = (zmq_close_fn)GetProcAddress(g_zmq.module, "zmq_close");
     g_zmq.bind = (zmq_bind_fn)GetProcAddress(g_zmq.module, "zmq_bind");
+    g_zmq.unbind = (zmq_unbind_fn)GetProcAddress(g_zmq.module, "zmq_unbind");
     g_zmq.connect = (zmq_connect_fn)GetProcAddress(g_zmq.module, "zmq_connect");
+    g_zmq.disconnect = (zmq_disconnect_fn)GetProcAddress(g_zmq.module, "zmq_disconnect");
     g_zmq.send = (zmq_send_fn)GetProcAddress(g_zmq.module, "zmq_send");
     g_zmq.recv = (zmq_recv_fn)GetProcAddress(g_zmq.module, "zmq_recv");
     g_zmq.errno_fn = (zmq_errno_fn)GetProcAddress(g_zmq.module, "zmq_errno");
@@ -79,7 +85,8 @@ static int zmq_bind_required_symbols(void)
     g_zmq.curve_keypair = (zmq_curve_keypair_fn)GetProcAddress(g_zmq.module, "zmq_curve_keypair");
 
     return g_zmq.ctx_new && g_zmq.ctx_term && g_zmq.ctx_shutdown && g_zmq.socket &&
-           g_zmq.close && g_zmq.bind && g_zmq.connect && g_zmq.send && g_zmq.recv &&
+           g_zmq.close && g_zmq.bind && g_zmq.unbind && g_zmq.connect && g_zmq.disconnect &&
+           g_zmq.send && g_zmq.recv &&
            g_zmq.errno_fn && g_zmq.strerror_fn && g_zmq.version && g_zmq.has &&
            g_zmq.setsockopt && g_zmq.getsockopt;
 }
@@ -243,6 +250,17 @@ int zmq_api_bind(void *socket, const char *endpoint)
 }
 
 /**
+ * @brief Unbind a ZeroMQ socket from an endpoint.
+ * @param socket
+ * @param endpoint
+ * @return int
+ */
+int zmq_api_unbind(void *socket, const char *endpoint)
+{
+    return g_zmq.loaded ? g_zmq.unbind(socket, endpoint) : -1;
+}
+
+/**
  * @brief Connect a ZeroMQ socket to an endpoint.
  * @param socket
  * @param endpoint
@@ -251,6 +269,17 @@ int zmq_api_bind(void *socket, const char *endpoint)
 int zmq_api_connect(void *socket, const char *endpoint)
 {
     return g_zmq.loaded ? g_zmq.connect(socket, endpoint) : -1;
+}
+
+/**
+ * @brief Disconnect a ZeroMQ socket from an endpoint.
+ * @param socket
+ * @param endpoint
+ * @return int
+ */
+int zmq_api_disconnect(void *socket, const char *endpoint)
+{
+    return g_zmq.loaded ? g_zmq.disconnect(socket, endpoint) : -1;
 }
 
 /**

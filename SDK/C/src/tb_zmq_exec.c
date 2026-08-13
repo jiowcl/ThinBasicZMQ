@@ -470,6 +470,90 @@ LONG __cdecl Exec_ZmqConnect(void)
 }
 
 /**
+ * @brief Unbind a ZeroMQ socket from an endpoint.
+ * @param void
+ * @return LONG
+ */
+LONG __cdecl Exec_ZmqUnbind(void)
+{
+    LONG  socket;
+    char *endpoint;
+    DWORD len;
+    char endpoint_copy[MAX_PATH];
+
+    if (!tb_expect_open_parens()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&socket)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_string(&endpoint, &len)) {
+        return 0;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return 0;
+    }
+
+    if (len >= sizeof(endpoint_copy)) {
+        return -1;
+    }
+
+    memcpy(endpoint_copy, endpoint, len);
+    endpoint_copy[len] = '\0';
+
+    return (LONG)zmq_api_unbind(tb_ptr_from_handle(socket), endpoint_copy);
+}
+
+/**
+ * @brief Disconnect a ZeroMQ socket from an endpoint.
+ * @param void
+ * @return LONG
+ */
+LONG __cdecl Exec_ZmqDisconnect(void)
+{
+    LONG  socket;
+    char *endpoint;
+    DWORD len;
+    char endpoint_copy[MAX_PATH];
+
+    if (!tb_expect_open_parens()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&socket)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_string(&endpoint, &len)) {
+        return 0;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return 0;
+    }
+
+    if (len >= sizeof(endpoint_copy)) {
+        return -1;
+    }
+
+    memcpy(endpoint_copy, endpoint, len);
+    endpoint_copy[len] = '\0';
+
+    return (LONG)zmq_api_disconnect(tb_ptr_from_handle(socket), endpoint_copy);
+}
+
+/**
  * @brief Send data on a ZeroMQ socket.
  * @param void
  * @return double

@@ -62,6 +62,8 @@ Samples:
 | `SDK\C\examples\ZmqSdkRepServer.tbasic` / `ZmqSdkReqClient.tbasic` | SDK REQ/REP (`USES "ZeroMQ"`, port 1740) |
 | `SDK\C\examples\ZmqSdkPubServer.tbasic` / `ZmqSdkSubClient.tbasic` | SDK PUB/SUB (`USES "ZeroMQ"`, port 1741, topic `quotes`) |
 | `SDK\C\examples\ZmqSdkCurve.tbasic` | SDK CURVE REQ/REP (`USES "ZeroMQ"`, port 1742) |
+| `SDK\C\examples\ZmqSdkPullServer.tbasic` / `ZmqSdkPushClient.tbasic` | SDK PUSH/PULL (`USES "ZeroMQ"`, port 1743) |
+| `SDK\C\examples\ZmqSdkPushPull.tbasic` | SDK PUSH/PULL single process + `ZmqUnbind` / `ZmqDisconnect` |
 
 ## Native vs ThinBasic SDK  
 

@@ -94,6 +94,19 @@ CURVE REQ/REP (single process):
 C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkCurve.tbasic"
 ```
 
+PUSH/PULL (two consoles; start the sink first):
+
+```bat
+C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkPullServer.tbasic"
+C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkPushClient.tbasic"
+```
+
+Single-process PUSH/PULL (also demos `ZmqUnbind` / `ZmqDisconnect`):
+
+```bat
+C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkPushPull.tbasic"
+```
+
 ## ABI contract
 
 Match [thinBasic_MSXML2](https://github.com/ThinBASIC/thinBasic_MSXML2) and official `thinCore.inc`.
@@ -119,7 +132,7 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 | `ZmqLibraryShutdown()` | Free libzmq |
 | `ZmqLibraryLoaded()` | 1 if loaded |
 | `ZmqCtxNew` / `ZmqCtxTerm` / `ZmqCtxShutdown` | Context |
-| `ZmqSocket` / `ZmqClose` / `ZmqBind` / `ZmqConnect` | Socket |
+| `ZmqSocket` / `ZmqClose` / `ZmqBind` / `ZmqUnbind` / `ZmqConnect` / `ZmqDisconnect` | Socket |
 | `ZmqSend` / `ZmqRecv` | Buffer via `StrPtr` / `VarPtr` |
 | `ZmqSetsockoptInt` / `ZmqSetsockoptStr` / `ZmqGetsockoptInt` | Options |
 | `ZmqErrno` / `ZmqStrerror` | Error helpers (`ZmqStrerror` returns ASCIIZ pointer) |
@@ -154,7 +167,7 @@ SDK/C/
 ├── include/          thinCore.h (constants), tb_thincore.h, tb_parse.h, …
 ├── src/              tb_thincore.c, tb_zmq_exec.c, thinBasic_ZeroMQ.c, zmq_dynload.c
 ├── lib/              thinBasic_ZeroMQ.def
-├── examples/         ZmqSdkSmoke, REQ/REP, PUB/SUB, Curve
+├── examples/         Smoke, REQ/REP, PUB/SUB, Curve, PUSH/PULL
 └── bin/              build output (gitignored)
 ```
 

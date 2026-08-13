@@ -1,0 +1,61 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+' SDK PUSH/PULL source. Start ZmqSdkPullServer.tbasic first.
+' Prerequisite: copy SDK\C\bin\thinBasic_ZeroMQ.dll to C:\thinBasic\Lib\
+
+USES "CONSOLE"
+USES "ZeroMQ"
+
+Global lpszLibPath As String
+Global lpszServerAddr As String
+Global hContext As Long
+Global hSocket As Long
+Global Rc As Long
+Global i As Long
+Global lpszSendMessage As String
+
+lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+lpszServerAddr = "tcp://127.0.0.1:1743"
+
+If ZmqLibraryInit(lpszLibPath) = 0 Then
+  Printl("Failed to load libzmq from " & lpszLibPath)
+  Console_Read()
+  Stop
+End If
+
+hContext = ZmqCtxNew()
+hSocket = ZmqSocket(hContext, %ZMQ_PUSH)
+ZmqSetsockoptInt(hSocket, %ZMQ_LINGER, 0)
+Rc = ZmqConnect(hSocket, lpszServerAddr)
+
+If Rc <> 0 Then
+  Printl("Connect failed: " & ZmqStrerrorString(ZmqErrno()))
+Else
+  Printl("Connect to Sink: " & lpszServerAddr)
+  Sleep 50
+
+  For i = 0 To 10
+    lpszSendMessage = "Push " & i
+    If ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+      Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
+      Exit For
+    End If
+    Printl("Pushed: " & lpszSendMessage)
+  Next
+
+  Rc = ZmqDisconnect(hSocket, lpszServerAddr)
+  If Rc <> 0 Then
+    Printl("Disconnect failed: " & ZmqStrerrorString(ZmqErrno()))
+  Else
+    Printl("Disconnected")
+  End If
+End If
+
+ZmqClose(hSocket)
+ZmqCtxShutdown(hContext)
+ZmqLibraryShutdown()
+Printl("Completed!")
+Console_Read()
