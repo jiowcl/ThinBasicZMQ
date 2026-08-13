@@ -16,6 +16,8 @@
 typedef void *(__cdecl *zmq_ctx_new_fn)(void);
 typedef int   (__cdecl *zmq_ctx_term_fn)(void *);
 typedef int   (__cdecl *zmq_ctx_shutdown_fn)(void *);
+typedef int   (__cdecl *zmq_ctx_set_fn)(void *, int, int);
+typedef int   (__cdecl *zmq_ctx_get_fn)(void *, int);
 typedef void *(__cdecl *zmq_socket_fn)(void *, int);
 typedef int   (__cdecl *zmq_close_fn)(void *);
 typedef int   (__cdecl *zmq_bind_fn)(void *, const char *);
@@ -31,6 +33,9 @@ typedef int   (__cdecl *zmq_has_fn)(const char *);
 typedef int   (__cdecl *zmq_setsockopt_fn)(void *, int, const void *, size_t);
 typedef int   (__cdecl *zmq_getsockopt_fn)(void *, int, void *, size_t *);
 typedef int   (__cdecl *zmq_curve_keypair_fn)(char *, char *);
+typedef int   (__cdecl *zmq_curve_public_fn)(char *, const char *);
+typedef char *(__cdecl *zmq_z85_encode_fn)(char *, const unsigned char *, size_t);
+typedef unsigned char *(__cdecl *zmq_z85_decode_fn)(unsigned char *, const char *);
 
 typedef struct zmq_api_table {
     HMODULE             module;
@@ -38,6 +43,8 @@ typedef struct zmq_api_table {
     zmq_ctx_new_fn      ctx_new;
     zmq_ctx_term_fn     ctx_term;
     zmq_ctx_shutdown_fn ctx_shutdown;
+    zmq_ctx_set_fn      ctx_set;
+    zmq_ctx_get_fn      ctx_get;
     zmq_socket_fn       socket;
     zmq_close_fn        close;
     zmq_bind_fn         bind;
@@ -53,6 +60,9 @@ typedef struct zmq_api_table {
     zmq_setsockopt_fn   setsockopt;
     zmq_getsockopt_fn   getsockopt;
     zmq_curve_keypair_fn curve_keypair;
+    zmq_curve_public_fn  curve_public;
+    zmq_z85_encode_fn    z85_encode;
+    zmq_z85_decode_fn    z85_decode;
 } zmq_api_table;
 
 static zmq_api_table g_zmq;
@@ -67,6 +77,8 @@ static int zmq_bind_required_symbols(void)
     g_zmq.ctx_new = (zmq_ctx_new_fn)GetProcAddress(g_zmq.module, "zmq_ctx_new");
     g_zmq.ctx_term = (zmq_ctx_term_fn)GetProcAddress(g_zmq.module, "zmq_ctx_term");
     g_zmq.ctx_shutdown = (zmq_ctx_shutdown_fn)GetProcAddress(g_zmq.module, "zmq_ctx_shutdown");
+    g_zmq.ctx_set = (zmq_ctx_set_fn)GetProcAddress(g_zmq.module, "zmq_ctx_set");
+    g_zmq.ctx_get = (zmq_ctx_get_fn)GetProcAddress(g_zmq.module, "zmq_ctx_get");
     g_zmq.socket = (zmq_socket_fn)GetProcAddress(g_zmq.module, "zmq_socket");
     g_zmq.close = (zmq_close_fn)GetProcAddress(g_zmq.module, "zmq_close");
     g_zmq.bind = (zmq_bind_fn)GetProcAddress(g_zmq.module, "zmq_bind");
@@ -81,10 +93,14 @@ static int zmq_bind_required_symbols(void)
     g_zmq.has = (zmq_has_fn)GetProcAddress(g_zmq.module, "zmq_has");
     g_zmq.setsockopt = (zmq_setsockopt_fn)GetProcAddress(g_zmq.module, "zmq_setsockopt");
     g_zmq.getsockopt = (zmq_getsockopt_fn)GetProcAddress(g_zmq.module, "zmq_getsockopt");
-    /* Optional: older builds may lack CURVE helpers. */
+    /* Optional: older builds may lack CURVE / Z85 helpers. */
     g_zmq.curve_keypair = (zmq_curve_keypair_fn)GetProcAddress(g_zmq.module, "zmq_curve_keypair");
+    g_zmq.curve_public = (zmq_curve_public_fn)GetProcAddress(g_zmq.module, "zmq_curve_public");
+    g_zmq.z85_encode = (zmq_z85_encode_fn)GetProcAddress(g_zmq.module, "zmq_z85_encode");
+    g_zmq.z85_decode = (zmq_z85_decode_fn)GetProcAddress(g_zmq.module, "zmq_z85_decode");
 
-    return g_zmq.ctx_new && g_zmq.ctx_term && g_zmq.ctx_shutdown && g_zmq.socket &&
+    return g_zmq.ctx_new && g_zmq.ctx_term && g_zmq.ctx_shutdown &&
+           g_zmq.ctx_set && g_zmq.ctx_get && g_zmq.socket &&
            g_zmq.close && g_zmq.bind && g_zmq.unbind && g_zmq.connect && g_zmq.disconnect &&
            g_zmq.send && g_zmq.recv &&
            g_zmq.errno_fn && g_zmq.strerror_fn && g_zmq.version && g_zmq.has &&
@@ -215,6 +231,29 @@ int zmq_api_ctx_term(void *context)
 int zmq_api_ctx_shutdown(void *context)
 {
     return g_zmq.loaded ? g_zmq.ctx_shutdown(context) : -1;
+}
+
+/**
+ * @brief Set a context option.
+ * @param context
+ * @param option
+ * @param optval
+ * @return int
+ */
+int zmq_api_ctx_set(void *context, int option, int optval)
+{
+    return g_zmq.loaded ? g_zmq.ctx_set(context, option, optval) : -1;
+}
+
+/**
+ * @brief Get a context option.
+ * @param context
+ * @param option
+ * @return int
+ */
+int zmq_api_ctx_get(void *context, int option)
+{
+    return g_zmq.loaded ? g_zmq.ctx_get(context, option) : -1;
 }
 
 /**
@@ -405,4 +444,50 @@ int zmq_api_curve_keypair(char *z85_public, char *z85_secret)
     }
 
     return g_zmq.curve_keypair(z85_public, z85_secret);
+}
+
+/**
+ * @brief Derive a CURVE public key from a Z85 secret.
+ * @param z85_public
+ * @param z85_secret
+ * @return int
+ */
+int zmq_api_curve_public(char *z85_public, const char *z85_secret)
+{
+    if (!g_zmq.loaded || g_zmq.curve_public == NULL || z85_public == NULL || z85_secret == NULL) {
+        return -1;
+    }
+
+    return g_zmq.curve_public(z85_public, z85_secret);
+}
+
+/**
+ * @brief Encode binary data as Z85.
+ * @param dest
+ * @param data
+ * @param size
+ * @return char *
+ */
+char *zmq_api_z85_encode(char *dest, const void *data, size_t size)
+{
+    if (!g_zmq.loaded || g_zmq.z85_encode == NULL || dest == NULL || data == NULL) {
+        return NULL;
+    }
+
+    return g_zmq.z85_encode(dest, (const unsigned char *)data, size);
+}
+
+/**
+ * @brief Decode Z85 text into binary.
+ * @param dest
+ * @param string
+ * @return unsigned char *
+ */
+unsigned char *zmq_api_z85_decode(unsigned char *dest, const char *string)
+{
+    if (!g_zmq.loaded || g_zmq.z85_decode == NULL || dest == NULL || string == NULL) {
+        return NULL;
+    }
+
+    return g_zmq.z85_decode(dest, string);
 }

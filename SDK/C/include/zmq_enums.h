@@ -51,7 +51,15 @@
 #define ZMQ_PLAIN  1
 #define ZMQ_CURVE  2
 
-/* CURVE Z85 key length (characters, excluding NUL) */
-#define ZMQ_CURVE_KEYSIZE_Z85 40
+/* CURVE key sizes */
+#define ZMQ_CURVE_KEYSIZE      32
+#define ZMQ_CURVE_KEYSIZE_Z85  40
+
+/* Context options */
+#define ZMQ_IO_THREADS   1
+#define ZMQ_MAX_SOCKETS  2
+
+#define ZMQ_IO_THREADS_DFLT  1
+#define ZMQ_MAX_SOCKETS_DFLT 1023
 
 #endif /* ZMQ_ENUMS_H */

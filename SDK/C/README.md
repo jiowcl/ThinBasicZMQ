@@ -107,6 +107,14 @@ Single-process PUSH/PULL (also demos `ZmqUnbind` / `ZmqDisconnect`):
 C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkPushPull.tbasic"
 ```
 
+Context options / Z85 / CurvePublic:
+
+```bat
+C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkCtx.tbasic"
+C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkZ85.tbasic"
+C:\thinBasic\thinBasicc.exe "SDK\C\examples\ZmqSdkCurvePublic.tbasic"
+```
+
 ## ABI contract
 
 Match [thinBasic_MSXML2](https://github.com/ThinBASIC/thinBasic_MSXML2) and official `thinCore.inc`.
@@ -132,6 +140,7 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 | `ZmqLibraryShutdown()` | Free libzmq |
 | `ZmqLibraryLoaded()` | 1 if loaded |
 | `ZmqCtxNew` / `ZmqCtxTerm` / `ZmqCtxShutdown` | Context |
+| `ZmqCtxSet` / `ZmqCtxGet` | Context options (`%ZMQ_IO_THREADS`, `%ZMQ_MAX_SOCKETS`) |
 | `ZmqSocket` / `ZmqClose` / `ZmqBind` / `ZmqUnbind` / `ZmqConnect` / `ZmqDisconnect` | Socket |
 | `ZmqSend` / `ZmqRecv` | Buffer via `StrPtr` / `VarPtr` |
 | `ZmqSetsockoptInt` / `ZmqSetsockoptStr` / `ZmqGetsockoptInt` | Options |
@@ -140,6 +149,9 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 | `ZmqVersionMajor` / `Minor` / `Patch` | Runtime version |
 | `ZmqHas(capability)` | `zmq_has` |
 | `ZmqCurveKeypair(pubPtr, secPtr)` | Fill two Z85 buffers (`StrPtr` / `VarPtr`, ≥41 bytes); 0 on success |
+| `ZmqCurvePublic(pubPtr, secret$)` | Derive Z85 public from 40-char secret; 0 on success |
+| `ZmqZ85Encode(destPtr, dataPtr, size)` | size multiple of 4; dest ≥ `size*5/4+1`; returns dest or 0 |
+| `ZmqZ85Decode(destPtr, encoded$)` | encoded length multiple of 5; dest ≥ `len*4/5`; returns dest or 0 |
 
 Equates registered by the module (use as `%ZMQ_REQ`, etc.):
 
@@ -147,7 +159,8 @@ Equates registered by the module (use as `%ZMQ_REQ`, etc.):
 - Flags / common opts: `%ZMQ_DONTWAIT`, `%ZMQ_SNDMORE`, `%ZMQ_SUBSCRIBE`, `%ZMQ_UNSUBSCRIBE`,
   `%ZMQ_LINGER`, `%ZMQ_RCVTIMEO`, `%ZMQ_SNDTIMEO`
 - Security: `%ZMQ_MECHANISM`, `%ZMQ_PLAIN_*`, `%ZMQ_CURVE_*`, `%ZMQ_ZAP_DOMAIN`,
-  `%ZMQ_NULL` / `%ZMQ_PLAIN` / `%ZMQ_CURVE`, `%ZMQ_CURVE_KEYSIZE_Z85`
+  `%ZMQ_NULL` / `%ZMQ_PLAIN` / `%ZMQ_CURVE`, `%ZMQ_CURVE_KEYSIZE`, `%ZMQ_CURVE_KEYSIZE_Z85`
+- Context: `%ZMQ_IO_THREADS`, `%ZMQ_MAX_SOCKETS`, `%ZMQ_IO_THREADS_DFLT`, `%ZMQ_MAX_SOCKETS_DFLT`
 
 ## Native vs SDK  
 
@@ -167,7 +180,7 @@ SDK/C/
 ├── include/          thinCore.h (constants), tb_thincore.h, tb_parse.h, …
 ├── src/              tb_thincore.c, tb_zmq_exec.c, thinBasic_ZeroMQ.c, zmq_dynload.c
 ├── lib/              thinBasic_ZeroMQ.def
-├── examples/         Smoke, REQ/REP, PUB/SUB, Curve, PUSH/PULL
+├── examples/         Smoke, REQ/REP, PUB/SUB, Curve, PUSH/PULL, Z85, Ctx
 └── bin/              build output (gitignored)
 ```
 

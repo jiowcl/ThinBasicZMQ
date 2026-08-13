@@ -1,0 +1,48 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+' SDK Z85 encode/decode round-trip.
+' Prerequisite: copy SDK\C\bin\thinBasic_ZeroMQ.dll to C:\thinBasic\Lib\
+
+USES "CONSOLE"
+USES "ZeroMQ"
+
+Global lpszLibPath As String
+Global lpszData As String * 8
+Global lpszDecoded As String * 8
+Global lpszEncoded As String * 16
+Global pEnc As Long
+Global pDec As Long
+
+lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+
+If ZmqLibraryInit(lpszLibPath) = 0 Then
+  Printl("Failed to load libzmq from " & lpszLibPath)
+  Console_Read()
+  Stop
+End If
+
+lpszData = "TestData"
+pEnc = ZmqZ85Encode(StrPtr(lpszEncoded), StrPtr(lpszData), 8)
+
+If pEnc = 0 Then
+  Printl("Z85 Encode failed: " & ZmqStrerrorString(ZmqErrno()))
+Else
+  Printl("Z85 Encode: " & Peek$(ASCIIZ, pEnc))
+
+  pDec = ZmqZ85Decode(StrPtr(lpszDecoded), Peek$(ASCIIZ, pEnc))
+  If pDec = 0 Then
+    Printl("Z85 Decode failed: " & ZmqStrerrorString(ZmqErrno()))
+  Else
+    Printl("Z85 Decode: " & Left$(lpszDecoded, 8))
+    If Left$(lpszDecoded, 8) = Left$(lpszData, 8) Then
+      Printl("Round-trip OK")
+    End If
+  End If
+End If
+
+ZmqLibraryShutdown()
+Printl("Completed!")
+Console_Read()

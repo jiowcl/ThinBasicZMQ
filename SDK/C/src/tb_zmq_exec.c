@@ -9,6 +9,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include "tb_parse.h"
 #include "zmq_dynload.h"
+#include "zmq_enums.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -846,4 +847,222 @@ LONG __cdecl Exec_ZmqCurveKeypair(void)
     return (LONG)zmq_api_curve_keypair(
         (char *)tb_ptr_from_handle(public_buf),
         (char *)tb_ptr_from_handle(secret_buf));
+}
+
+/**
+ * @brief Derive a CURVE public Z85 key from a secret string.
+ * @param void
+ * @return LONG 0 on success, -1 on failure
+ */
+LONG __cdecl Exec_ZmqCurvePublic(void)
+{
+    LONG  public_buf;
+    char *secret;
+    DWORD len;
+    char secret_copy[ZMQ_CURVE_KEYSIZE_Z85 + 1];
+
+    if (!tb_expect_open_parens()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&public_buf)) {
+        return -1;
+    }
+
+    if (!tb_expect_comma()) {
+        return -1;
+    }
+
+    if (!tb_parse_string(&secret, &len)) {
+        return -1;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return -1;
+    }
+
+    if (public_buf == 0 || len != (DWORD)ZMQ_CURVE_KEYSIZE_Z85) {
+        return -1;
+    }
+
+    memcpy(secret_copy, secret, len);
+    secret_copy[len] = '\0';
+
+    return (LONG)zmq_api_curve_public(
+        (char *)tb_ptr_from_handle(public_buf),
+        secret_copy);
+}
+
+/**
+ * @brief Encode binary data as Z85 into a caller buffer.
+ * @param void
+ * @return LONG dest pointer on success, 0 on failure
+ */
+LONG __cdecl Exec_ZmqZ85Encode(void)
+{
+    LONG  dest;
+    LONG  data;
+    LONG  size;
+    char *out;
+
+    if (!tb_expect_open_parens()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&dest)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&data)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&size)) {
+        return 0;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return 0;
+    }
+
+    if (dest == 0 || data == 0 || size <= 0 || (size & 3) != 0) {
+        return 0;
+    }
+
+    out = zmq_api_z85_encode(
+        (char *)tb_ptr_from_handle(dest),
+        tb_ptr_from_handle(data),
+        (size_t)size);
+
+    return (LONG)(intptr_t)out;
+}
+
+/**
+ * @brief Decode Z85 text into a caller buffer.
+ * @param void
+ * @return LONG dest pointer on success, 0 on failure
+ */
+LONG __cdecl Exec_ZmqZ85Decode(void)
+{
+    LONG  dest;
+    char *encoded;
+    DWORD len;
+    char encoded_copy[256];
+    unsigned char *out;
+
+    if (!tb_expect_open_parens()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&dest)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_string(&encoded, &len)) {
+        return 0;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return 0;
+    }
+
+    if (dest == 0 || len == 0 || (len % 5) != 0 || len >= sizeof(encoded_copy)) {
+        return 0;
+    }
+
+    memcpy(encoded_copy, encoded, len);
+    encoded_copy[len] = '\0';
+
+    out = zmq_api_z85_decode(
+        (unsigned char *)tb_ptr_from_handle(dest),
+        encoded_copy);
+
+    return (LONG)(intptr_t)out;
+}
+
+/**
+ * @brief Set a context option.
+ * @param void
+ * @return LONG
+ */
+LONG __cdecl Exec_ZmqCtxSet(void)
+{
+    LONG ctx;
+    LONG option;
+    LONG value;
+
+    if (!tb_expect_open_parens()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&ctx)) {
+        return -1;
+    }
+
+    if (!tb_expect_comma()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&option)) {
+        return -1;
+    }
+
+    if (!tb_expect_comma()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&value)) {
+        return -1;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return -1;
+    }
+
+    return (LONG)zmq_api_ctx_set(tb_ptr_from_handle(ctx), (int)option, (int)value);
+}
+
+/**
+ * @brief Get a context option.
+ * @param void
+ * @return LONG
+ */
+LONG __cdecl Exec_ZmqCtxGet(void)
+{
+    LONG ctx;
+    LONG option;
+
+    if (!tb_expect_open_parens()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&ctx)) {
+        return -1;
+    }
+
+    if (!tb_expect_comma()) {
+        return -1;
+    }
+
+    if (!tb_parse_int(&option)) {
+        return -1;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return -1;
+    }
+
+    return (LONG)zmq_api_ctx_get(tb_ptr_from_handle(ctx), (int)option);
 }

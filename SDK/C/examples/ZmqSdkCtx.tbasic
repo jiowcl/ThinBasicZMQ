@@ -1,0 +1,47 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+' SDK context options (ZmqCtxSet / ZmqCtxGet).
+' Prerequisite: copy SDK\C\bin\thinBasic_ZeroMQ.dll to C:\thinBasic\Lib\
+
+USES "CONSOLE"
+USES "ZeroMQ"
+
+Global lpszLibPath As String
+Global hContext As Long
+Global nIoBefore As Long
+Global nIoAfter As Long
+Global nMaxSockets As Long
+Global Rc As Long
+
+lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+
+If ZmqLibraryInit(lpszLibPath) = 0 Then
+  Printl("Failed to load libzmq from " & lpszLibPath)
+  Console_Read()
+  Stop
+End If
+
+hContext = ZmqCtxNew()
+nIoBefore = ZmqCtxGet(hContext, %ZMQ_IO_THREADS)
+nMaxSockets = ZmqCtxGet(hContext, %ZMQ_MAX_SOCKETS)
+Printl("IO threads (default): " & nIoBefore & " (DFLT=" & %ZMQ_IO_THREADS_DFLT & ")")
+Printl("Max sockets: " & nMaxSockets & " (DFLT=" & %ZMQ_MAX_SOCKETS_DFLT & ")")
+
+Rc = ZmqCtxSet(hContext, %ZMQ_IO_THREADS, 2)
+If Rc <> 0 Then
+  Printl("CtxSet failed: " & ZmqStrerrorString(ZmqErrno()))
+Else
+  nIoAfter = ZmqCtxGet(hContext, %ZMQ_IO_THREADS)
+  Printl("IO threads (after set 2): " & nIoAfter)
+  If nIoAfter = 2 Then
+    Printl("CtxSet/Get OK")
+  End If
+End If
+
+ZmqCtxShutdown(hContext)
+ZmqLibraryShutdown()
+Printl("Completed!")
+Console_Read()

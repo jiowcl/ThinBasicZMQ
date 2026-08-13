@@ -31,6 +31,8 @@ LONG __cdecl Exec_ZmqHas(void);
 LONG __cdecl Exec_ZmqCtxNew(void);
 LONG __cdecl Exec_ZmqCtxTerm(void);
 LONG __cdecl Exec_ZmqCtxShutdown(void);
+LONG __cdecl Exec_ZmqCtxSet(void);
+LONG __cdecl Exec_ZmqCtxGet(void);
 LONG __cdecl Exec_ZmqSocket(void);
 LONG __cdecl Exec_ZmqClose(void);
 LONG __cdecl Exec_ZmqBind(void);
@@ -43,6 +45,9 @@ LONG __cdecl Exec_ZmqSetsockoptInt(void);
 LONG __cdecl Exec_ZmqSetsockoptStr(void);
 LONG __cdecl Exec_ZmqGetsockoptInt(void);
 LONG __cdecl Exec_ZmqCurveKeypair(void);
+LONG __cdecl Exec_ZmqCurvePublic(void);
+LONG __cdecl Exec_ZmqZ85Encode(void);
+LONG __cdecl Exec_ZmqZ85Decode(void);
 
 /**
  * @brief Register a symbol.
@@ -89,6 +94,8 @@ static void tb_zmq_register_symbols(void)
     tb_zmq_register_symbol("ZmqCtxNew", thinBasic_ReturnCodeLong, &Exec_ZmqCtxNew);
     tb_zmq_register_symbol("ZmqCtxTerm", thinBasic_ReturnCodeLong, &Exec_ZmqCtxTerm);
     tb_zmq_register_symbol("ZmqCtxShutdown", thinBasic_ReturnCodeLong, &Exec_ZmqCtxShutdown);
+    tb_zmq_register_symbol("ZmqCtxSet", thinBasic_ReturnCodeLong, &Exec_ZmqCtxSet);
+    tb_zmq_register_symbol("ZmqCtxGet", thinBasic_ReturnCodeLong, &Exec_ZmqCtxGet);
     tb_zmq_register_symbol("ZmqSocket", thinBasic_ReturnCodeLong, &Exec_ZmqSocket);
     tb_zmq_register_symbol("ZmqClose", thinBasic_ReturnCodeLong, &Exec_ZmqClose);
     tb_zmq_register_symbol("ZmqBind", thinBasic_ReturnCodeLong, &Exec_ZmqBind);
@@ -101,6 +108,9 @@ static void tb_zmq_register_symbols(void)
     tb_zmq_register_symbol("ZmqSetsockoptStr", thinBasic_ReturnCodeLong, &Exec_ZmqSetsockoptStr);
     tb_zmq_register_symbol("ZmqGetsockoptInt", thinBasic_ReturnCodeLong, &Exec_ZmqGetsockoptInt);
     tb_zmq_register_symbol("ZmqCurveKeypair", thinBasic_ReturnCodeLong, &Exec_ZmqCurveKeypair);
+    tb_zmq_register_symbol("ZmqCurvePublic", thinBasic_ReturnCodeLong, &Exec_ZmqCurvePublic);
+    tb_zmq_register_symbol("ZmqZ85Encode", thinBasic_ReturnCodeLong, &Exec_ZmqZ85Encode);
+    tb_zmq_register_symbol("ZmqZ85Decode", thinBasic_ReturnCodeLong, &Exec_ZmqZ85Decode);
 }
 
 /**
@@ -144,7 +154,13 @@ static void tb_zmq_register_equates(void)
     tb_zmq_register_equate("%ZMQ_NULL", ZMQ_NULL);
     tb_zmq_register_equate("%ZMQ_PLAIN", ZMQ_PLAIN);
     tb_zmq_register_equate("%ZMQ_CURVE", ZMQ_CURVE);
+    tb_zmq_register_equate("%ZMQ_CURVE_KEYSIZE", ZMQ_CURVE_KEYSIZE);
     tb_zmq_register_equate("%ZMQ_CURVE_KEYSIZE_Z85", ZMQ_CURVE_KEYSIZE_Z85);
+
+    tb_zmq_register_equate("%ZMQ_IO_THREADS", ZMQ_IO_THREADS);
+    tb_zmq_register_equate("%ZMQ_MAX_SOCKETS", ZMQ_MAX_SOCKETS);
+    tb_zmq_register_equate("%ZMQ_IO_THREADS_DFLT", ZMQ_IO_THREADS_DFLT);
+    tb_zmq_register_equate("%ZMQ_MAX_SOCKETS_DFLT", ZMQ_MAX_SOCKETS_DFLT);
 }
 
 /**

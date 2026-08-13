@@ -1,0 +1,47 @@
+'--------------------------------------------------------------------------------------------
+'  Copyright (c) Ji-Feng Tsai. All rights reserved.
+'  Code released under the MIT license.
+'--------------------------------------------------------------------------------------------
+
+' SDK CURVE keypair + derive public from secret.
+' Prerequisite: copy SDK\C\bin\thinBasic_ZeroMQ.dll to C:\thinBasic\Lib\
+
+USES "CONSOLE"
+USES "ZeroMQ"
+
+Global lpszLibPath As String
+Global lpszPublic As String * 41
+Global lpszSecret As String * 41
+Global lpszDerived As String * 41
+Global Rc As Long
+
+lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
+
+If ZmqLibraryInit(lpszLibPath) = 0 Then
+  Printl("Failed to load libzmq from " & lpszLibPath)
+  Console_Read()
+  Stop
+End If
+
+If ZmqHas("curve") = 0 Then
+  Printl("libzmq was built without CURVE support (zmq_has(""curve"") = 0).")
+ElseIf ZmqCurveKeypair(StrPtr(lpszPublic), StrPtr(lpszSecret)) <> 0 Then
+  Printl("CurveKeypair failed: " & ZmqStrerrorString(ZmqErrno()))
+Else
+  Rc = ZmqCurvePublic(StrPtr(lpszDerived), Left$(lpszSecret, %ZMQ_CURVE_KEYSIZE_Z85))
+  If Rc <> 0 Then
+    Printl("CurvePublic failed: " & ZmqStrerrorString(ZmqErrno()))
+  Else
+    Printl("Public Key : " & Left$(lpszPublic, %ZMQ_CURVE_KEYSIZE_Z85))
+    Printl("Secret Key : " & Left$(lpszSecret, %ZMQ_CURVE_KEYSIZE_Z85))
+    Printl("Derived Pub: " & Left$(lpszDerived, %ZMQ_CURVE_KEYSIZE_Z85))
+
+    If Left$(lpszPublic, %ZMQ_CURVE_KEYSIZE_Z85) = Left$(lpszDerived, %ZMQ_CURVE_KEYSIZE_Z85) Then
+      Printl("CurvePublic matches CurveKeypair public key.")
+    End If
+  End If
+End If
+
+ZmqLibraryShutdown()
+Printl("Completed!")
+Console_Read()
