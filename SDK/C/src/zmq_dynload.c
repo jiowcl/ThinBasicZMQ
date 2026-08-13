@@ -108,19 +108,29 @@ static int zmq_bind_required_symbols(void)
 }
 
 /**
- * @brief Trim trailing slashes.
+ * @brief Trim trailing slashes from a bounded C string.
  * @param path
+ * @param max_len including space for the terminating NUL
  * @return void
  */
-static void zmq_trim_trailing_slashes(char *path)
+static void zmq_trim_trailing_slashes(char *path, size_t max_len)
 {
     size_t len;
 
-    if (path == NULL) {
+    if (path == NULL || max_len == 0) {
         return;
     }
 
-    len = strlen(path);
+    for (len = 0; len < max_len; len++) {
+        if (path[len] == '\0') {
+            break;
+        }
+    }
+
+    if (len >= max_len) {
+        path[0] = '\0';
+        return;
+    }
 
     while (len > 0 && (path[len - 1] == '\\' || path[len - 1] == '/')) {
         path[len - 1] = '\0';
@@ -149,7 +159,7 @@ int zmq_dyn_load_directory(const char *dir, DWORD dir_len)
 
     memcpy(folder, dir, dir_len);
     folder[dir_len] = '\0';
-    zmq_trim_trailing_slashes(folder);
+    zmq_trim_trailing_slashes(folder, sizeof(folder));
 
     if (_snprintf(dll_path, sizeof(dll_path), "%s\\libzmq.dll", folder) < 0) {
         return 0;

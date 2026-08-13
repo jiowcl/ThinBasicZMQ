@@ -240,6 +240,7 @@ DWORD tb_CheckCloseParens(DWORD HideError, DWORD AutoPutBack)
 void *tb_return_string(const char *sz)
 {
     size_t len;
+    const size_t max_len = 4096;
 
     if (g_tb.alloc_bstr == NULL) {
         return NULL;
@@ -249,8 +250,13 @@ void *tb_return_string(const char *sz)
         return g_tb.alloc_bstr(NULL, 0);
     }
 
-    len = strlen(sz);
-    if (len > 0x7FFFFFFF) {
+    for (len = 0; len < max_len; len++) {
+        if (sz[len] == '\0') {
+            break;
+        }
+    }
+
+    if (len == 0 || len >= max_len) {
         return NULL;
     }
 
