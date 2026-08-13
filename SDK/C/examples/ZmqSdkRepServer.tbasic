@@ -34,7 +34,7 @@ ZmqSetsockoptInt(hSocket, %ZMQ_LINGER, 0)
 Rc = ZmqBind(hSocket, lpszServerAddr)
 
 If Rc <> 0 Then
-  Printl("Bind failed, errno=" & ZmqErrno())
+  Printl("Bind failed: " & ZmqStrerrorString(ZmqErrno()))
 Else
   Printl("Bind an IP address: " & lpszServerAddr)
 

@@ -38,7 +38,7 @@ ZmqSetsockoptInt(hSocket, %ZMQ_LINGER, 0)
 Rc = ZmqBind(hSocket, lpszServerAddr)
 
 If Rc <> 0 Then
-  Printl("Bind failed, errno=" & ZmqErrno())
+  Printl("Bind failed: " & ZmqStrerrorString(ZmqErrno()))
 Else
   Printl("Bind an IP address: " & lpszServerAddr)
 
@@ -53,9 +53,9 @@ Else
     lpszSendMessage = "Bid:" & Str$(nBid) & ",Ask:" & Str$(nAsk)
 
     If ZmqSend(hSocket, StrPtr(lpszTopic), Len(lpszTopic), %ZMQ_SNDMORE) = -1 Then
-      Printl("Send topic failed, errno=" & ZmqErrno())
+      Printl("Send topic failed: " & ZmqStrerrorString(ZmqErrno()))
     ElseIf ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
-      Printl("Send message failed, errno=" & ZmqErrno())
+      Printl("Send message failed: " & ZmqStrerrorString(ZmqErrno()))
     Else
       Printl("Published: " & lpszSendMessage)
     End If

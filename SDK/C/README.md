@@ -101,11 +101,11 @@ Violating any row below has caused `0xC0000005` (ACCESS_VIOLATION) / a black con
 
 | Topic | Do | Do not |
 |-------|----|--------|
-| Keyword return | Register `thinBasic_ReturnCodeLong`. Executor returns `LONG` in **EAX**. | `thinBasic_ReturnNumber`, C `double`, or 10-byte `EXT` in ST(0). Official PB modules return `EXT`; a C `double` is not the same size and leaves the FPU dirty. |
+| Keyword return | Numeric: cdecl `_thinBasic_LoadSymbol` + `thinBasic_ReturnCodeLong`, `LONG` in **EAX**. String: stdcall `thinBasic_LoadSymbol_FB` + `thinBasic_ReturnString`; `__stdcall` executor returns a byte-BSTR (`SysAllocStringByteLen`) in **EAX** (ThinBasic frees it). | `thinBasic_ReturnNumber`, C `double`, or `EXT` in ST(0). Do not return a C `char*` / libzmq static string. Do not register string keywords with cdecl `_thinBasic_LoadSymbol` (empty result + later AV). GCC `thinBasic_SetReturnString` is not in current `thinCore.dll`. |
 | Integers | `thinBasic_ParseLong` (ByRef `LONG`, stdcall). Keep the value as `LONG`. | `thinBasic_ParseDouble`. Do not convert `LONG` → `double` (that writes ST(0); `Printl` / `FNINIT` can hide the crash). |
 | Strings | `thinBasic_ParseString` is `Function (…) As Ext`. The C thunk must be typed as returning `double` so the compiler **pops ST(0)**. Length comes from `strlen` on the ByRef pointer. | Treat EAX or the `EXT` as success or as the string length. The `EXT` is the numeric value of the text (0 for `"quotes"`). Leaving ST(0) live will AV on the next string keyword (`ZmqSetsockoptStr` then `ZmqConnect`). |
 | Equates | `"%ZMQ_REP"` via cdecl `_thinBasic_AddEquate(char*, char*, DWORD, DWORD)`. | Name without `%`. Do not call the stdcall `thinBasic_AddEquate` with a `DWORD` where PB passes `EXT` (stack misaligned; `USES "ZeroMQ"` crashes). |
-| Registration vs parse | Load cdecl `_thinBasic_LoadSymbol` / `_thinBasic_AddEquate`. Parse stdcall `thinBasic_ParseLong` / `thinBasic_ParseString` / `thinBasic_Check*`. | Link Pelles C against GCC `thinCore.lib` (calling-convention mismatch). |
+| Registration vs parse | Numeric keywords: cdecl `_thinBasic_LoadSymbol`. String keywords: stdcall `thinBasic_LoadSymbol_FB`. Equates: cdecl `_thinBasic_AddEquate`. Parse stdcall `thinBasic_ParseLong` / `thinBasic_ParseString` / `thinBasic_Check*`. | Link Pelles C against GCC `thinCore.lib`. Register `ReturnString` via `_thinBasic_LoadSymbol`. |
 | Module entry | Export `_LoadLocalSymbols` / `_UnLoadLocalSymbols` (cdecl). Both return **0**. `GetModuleHandle("thinCore.dll")` first; do not `FreeLibrary` the interpreter’s copy. | Return 1 from `LoadLocalSymbols`. |
 | Handles | 32-bit `LONG` (x86 pointers fit). | |
 
@@ -123,6 +123,7 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 | `ZmqSend` / `ZmqRecv` | Buffer via `StrPtr` / `VarPtr` |
 | `ZmqSetsockoptInt` / `ZmqSetsockoptStr` / `ZmqGetsockoptInt` | Options |
 | `ZmqErrno` / `ZmqStrerror` | Error helpers (`ZmqStrerror` returns ASCIIZ pointer) |
+| `ZmqStrerrorString(errnum)` | ThinBasic `String` (BSTR); prefer this for `Printl` |
 | `ZmqVersionMajor` / `Minor` / `Patch` | Runtime version |
 | `ZmqHas(capability)` | `zmq_has` |
 | `ZmqCurveKeypair(pubPtr, secPtr)` | Fill two Z85 buffers (`StrPtr` / `VarPtr`, ≥41 bytes); 0 on success |

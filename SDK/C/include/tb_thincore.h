@@ -18,10 +18,12 @@ void  tb_thincore_shutdown(void);
 
 DWORD tb_AddEquate(char *szEquate, char *szStringValue, DWORD dwNumericValue, DWORD dwConstType);
 DWORD tb_LoadSymbol(char *szFunctionName, DWORD dwReturnType, void *FunctionCode, DWORD dwForceOverWrite);
+DWORD tb_LoadSymbolFB(char *szFunctionName, DWORD dwReturnType, void *FunctionCode, DWORD dwForceOverWrite);
 void  tb_ParseLong(LONG *result);
 void  tb_ParseString(char **pszString);
 DWORD tb_CheckOpenParens(DWORD HideError, DWORD AutoPutBack);
 DWORD tb_CheckComma(DWORD HideError, DWORD AutoPutBack);
 DWORD tb_CheckCloseParens(DWORD HideError, DWORD AutoPutBack);
+void *tb_return_string(const char *sz);
 
 #endif /* TB_THINCORE_H */

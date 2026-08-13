@@ -17,22 +17,27 @@
 
 typedef DWORD (__cdecl *tb_add_equate_fn)(char *, char *, DWORD, DWORD);
 typedef DWORD (__cdecl *tb_load_symbol_fn)(char *, DWORD, void *, DWORD);
+typedef DWORD (__stdcall *tb_load_symbol_fb_fn)(char *, DWORD, void *, DWORD);
 typedef void  (__stdcall *tb_parse_long_fn)(LONG *);
 /* Official SDK: Function thinBasic_ParseString(...) As Ext — value is in ST(0). */
 typedef double (__stdcall *tb_parse_string_fn)(char **);
 typedef DWORD (__stdcall *tb_check_parens_fn)(DWORD, DWORD);
 typedef DWORD (__stdcall *tb_check_comma_fn)(DWORD, DWORD);
+/* OLE byte-BSTR used by thinBasic_ReturnString (see FreeBASIC FBGFX sample). */
+typedef void *(__stdcall *tb_sys_alloc_string_byte_len_fn)(const char *, UINT);
 
 typedef struct tb_thincore_api {
     HMODULE              module;
     int                  loaded;
     tb_add_equate_fn     add_equate;
     tb_load_symbol_fn    load_symbol;
+    tb_load_symbol_fb_fn load_symbol_fb;
     tb_parse_long_fn     parse_long;
     tb_parse_string_fn   parse_string;
     tb_check_parens_fn   check_open_parens;
     tb_check_parens_fn   check_close_parens;
     tb_check_comma_fn    check_comma;
+    tb_sys_alloc_string_byte_len_fn alloc_bstr;
 } tb_thincore_api;
 
 static tb_thincore_api g_tb;
@@ -77,13 +82,28 @@ int tb_thincore_init(void)
 
     g_tb.add_equate = (tb_add_equate_fn)tb_resolve_export("_thinBasic_AddEquate");
     g_tb.load_symbol = (tb_load_symbol_fn)tb_resolve_export("_thinBasic_LoadSymbol");
+    g_tb.load_symbol_fb = (tb_load_symbol_fb_fn)tb_resolve_export("thinBasic_LoadSymbol_FB");
     g_tb.parse_long = (tb_parse_long_fn)tb_resolve_export("thinBasic_ParseLong");
     g_tb.parse_string = (tb_parse_string_fn)tb_resolve_export("thinBasic_ParseString");
     g_tb.check_open_parens = (tb_check_parens_fn)tb_resolve_export("thinBasic_CheckOpenParens");
     g_tb.check_close_parens = (tb_check_parens_fn)tb_resolve_export("thinBasic_CheckCloseParens");
     g_tb.check_comma = (tb_check_comma_fn)tb_resolve_export("thinBasic_CheckComma");
 
-    if (g_tb.add_equate == NULL || g_tb.load_symbol == NULL ||
+    {
+        HMODULE ole;
+
+        ole = GetModuleHandleA("oleaut32.dll");
+        
+        if (ole == NULL) {
+            ole = LoadLibraryA("oleaut32.dll");
+        }
+        
+        if (ole != NULL) {
+            g_tb.alloc_bstr = (tb_sys_alloc_string_byte_len_fn)(void *)(INT_PTR)GetProcAddress(ole, "SysAllocStringByteLen");
+        }
+    }
+
+    if (g_tb.add_equate == NULL || g_tb.load_symbol == NULL || g_tb.load_symbol_fb == NULL ||
         g_tb.parse_long == NULL || g_tb.parse_string == NULL || g_tb.check_open_parens == NULL ||
         g_tb.check_close_parens == NULL || g_tb.check_comma == NULL) {
 
@@ -134,6 +154,19 @@ DWORD tb_AddEquate(char *szEquate, char *szStringValue, DWORD dwNumericValue, DW
 DWORD tb_LoadSymbol(char *szFunctionName, DWORD dwReturnType, void *FunctionCode, DWORD dwForceOverWrite)
 {
     return g_tb.load_symbol(szFunctionName, dwReturnType, FunctionCode, dwForceOverWrite);
+}
+
+/**
+ * @brief Load a symbol with the FreeBASIC calling convention.
+ * @param szFunctionName
+ * @param dwReturnType
+ * @param FunctionCode stdcall executor (BSTR in EAX for ReturnString)
+ * @param dwForceOverWrite
+ * @return symbol id, or 0
+ */
+DWORD tb_LoadSymbolFB(char *szFunctionName, DWORD dwReturnType, void *FunctionCode, DWORD dwForceOverWrite)
+{
+    return g_tb.load_symbol_fb(szFunctionName, dwReturnType, FunctionCode, dwForceOverWrite);
 }
 
 /**
@@ -194,4 +227,32 @@ DWORD tb_CheckComma(DWORD HideError, DWORD AutoPutBack)
 DWORD tb_CheckCloseParens(DWORD HideError, DWORD AutoPutBack)
 {
     return g_tb.check_close_parens(HideError, AutoPutBack);
+}
+
+/**
+ * @brief Allocate a ThinBasic return string (byte BSTR).
+ * @param sz ASCII text, or NULL for empty
+ * @return BSTR pointer for EAX, or NULL
+ *
+ * Official FreeBASIC modules use SysAllocStringByteLen + thinBasic_ReturnString.
+ * thinBasic owns the BSTR and will free it. Do not return a C string pointer.
+ */
+void *tb_return_string(const char *sz)
+{
+    size_t len;
+
+    if (g_tb.alloc_bstr == NULL) {
+        return NULL;
+    }
+
+    if (sz == NULL || sz[0] == '\0') {
+        return g_tb.alloc_bstr(NULL, 0);
+    }
+
+    len = strlen(sz);
+    if (len > 0x7FFFFFFF) {
+        return NULL;
+    }
+
+    return g_tb.alloc_bstr(sz, (UINT)len);
 }

@@ -23,6 +23,7 @@ LONG __cdecl Exec_ZmqLibraryShutdown(void);
 LONG __cdecl Exec_ZmqLibraryLoaded(void);
 LONG __cdecl Exec_ZmqErrno(void);
 LONG __cdecl Exec_ZmqStrerror(void);
+void * __stdcall Exec_ZmqStrerrorString(void);
 LONG __cdecl Exec_ZmqVersionMajor(void);
 LONG __cdecl Exec_ZmqVersionMinor(void);
 LONG __cdecl Exec_ZmqVersionPatch(void);
@@ -77,6 +78,7 @@ static void tb_zmq_register_symbols(void)
 
     tb_zmq_register_symbol("ZmqErrno", thinBasic_ReturnCodeLong, &Exec_ZmqErrno);
     tb_zmq_register_symbol("ZmqStrerror", thinBasic_ReturnCodeLong, &Exec_ZmqStrerror);
+    tb_LoadSymbolFB("ZmqStrerrorString", thinBasic_ReturnString, (void *)&Exec_ZmqStrerrorString, thinBasic_ForceOverWrite);
     tb_zmq_register_symbol("ZmqVersionMajor", thinBasic_ReturnCodeLong, &Exec_ZmqVersionMajor);
     tb_zmq_register_symbol("ZmqVersionMinor", thinBasic_ReturnCodeLong, &Exec_ZmqVersionMinor);
     tb_zmq_register_symbol("ZmqVersionPatch", thinBasic_ReturnCodeLong, &Exec_ZmqVersionPatch);

@@ -34,7 +34,7 @@ ZmqSetsockoptInt(hSocket, %ZMQ_LINGER, 0)
 Rc = ZmqConnect(hSocket, lpszServerAddr)
 
 If Rc <> 0 Then
-  Printl("Connect failed, errno=" & ZmqErrno())
+  Printl("Connect failed: " & ZmqStrerrorString(ZmqErrno()))
 Else
   Printl("Connect to Server: " & lpszServerAddr)
   Sleep 50

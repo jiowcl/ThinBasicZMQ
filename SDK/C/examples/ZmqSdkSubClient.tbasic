@@ -38,12 +38,12 @@ ZmqSetsockoptInt(hSocket, %ZMQ_LINGER, 0)
 Rc = ZmqSetsockoptStr(hSocket, %ZMQ_SUBSCRIBE, lpszSubscribe)
 
 If Rc <> 0 Then
-  Printl("Subscribe failed, errno=" & ZmqErrno())
+  Printl("Subscribe failed: " & ZmqStrerrorString(ZmqErrno()))
 Else
   Rc = ZmqConnect(hSocket, lpszServerAddr)
 
   If Rc <> 0 Then
-    Printl("Connect failed, errno=" & ZmqErrno())
+    Printl("Connect failed: " & ZmqStrerrorString(ZmqErrno()))
   Else
     Printl("Connected: " & lpszServerAddr & " (subscribe=" & lpszSubscribe & ")")
 
@@ -51,12 +51,12 @@ Else
       TopicBytes = ZmqRecv(hSocket, StrPtr(lpszTopicBuffer), 256, 0)
 
       If TopicBytes = -1 Then
-        Printl("Recv topic failed, errno=" & ZmqErrno())
+        Printl("Recv topic failed: " & ZmqStrerrorString(ZmqErrno()))
       Else
         MessageBytes = ZmqRecv(hSocket, StrPtr(lpszRecvBuffer), 256, 0)
 
         If MessageBytes = -1 Then
-          Printl("Recv message failed, errno=" & ZmqErrno())
+          Printl("Recv message failed: " & ZmqStrerrorString(ZmqErrno()))
         ElseIf MessageBytes > 0 Then
           Printl(Left$(lpszRecvBuffer, MessageBytes))
         End If

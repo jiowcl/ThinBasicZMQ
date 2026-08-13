@@ -30,6 +30,7 @@ nMinor = ZmqVersionMinor()
 nPatch = ZmqVersionPatch()
 Printl("ZmqSdkSmoke starting...")
 Printl("libzmq version: " & nMajor & "." & nMinor & "." & nPatch)
+Printl("strerror(0): " & ZmqStrerrorString(0))
 
 hContext = ZmqCtxNew()
 hSocketRep = ZmqSocket(hContext, %ZMQ_REP)

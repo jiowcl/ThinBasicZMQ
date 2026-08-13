@@ -38,7 +38,7 @@ If ZmqHas("curve") = 0 Then
   Printl("libzmq was built without CURVE support (zmq_has(""curve"") = 0).")
 ElseIf ZmqCurveKeypair(StrPtr(lpszServerPublic), StrPtr(lpszServerSecret)) <> 0 Or _
        ZmqCurveKeypair(StrPtr(lpszClientPublic), StrPtr(lpszClientSecret)) <> 0 Then
-  Printl("CurveKeypair failed, errno=" & ZmqErrno())
+  Printl("CurveKeypair failed: " & ZmqStrerrorString(ZmqErrno()))
 Else
   hContext = ZmqCtxNew()
   hSocketRep = ZmqSocket(hContext, %ZMQ_REP)
@@ -70,13 +70,13 @@ Else
   For nLoop = 1 To 3
     lpszSendMessage = "From Curve Client"
     If ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
-      Printl("Send failed, errno=" & ZmqErrno())
+      Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
       Exit For
     End If
 
     nRecvBytes = ZmqRecv(hSocketRep, StrPtr(lpszRecvBuffer), 64, 0)
     If nRecvBytes < 0 Then
-      Printl("REP recv failed, errno=" & ZmqErrno())
+      Printl("REP recv failed: " & ZmqStrerrorString(ZmqErrno()))
       Exit For
     End If
 
@@ -86,7 +86,7 @@ Else
 
     nRecvBytes = ZmqRecv(hSocketReq, StrPtr(lpszRecvBuffer), 64, 0)
     If nRecvBytes < 0 Then
-      Printl("REQ recv failed, errno=" & ZmqErrno())
+      Printl("REQ recv failed: " & ZmqStrerrorString(ZmqErrno()))
       Exit For
     End If
 

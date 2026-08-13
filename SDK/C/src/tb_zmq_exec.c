@@ -139,6 +139,33 @@ LONG __cdecl Exec_ZmqStrerror(void)
 }
 
 /**
+ * @brief Get the last error message as a ThinBasic String (BSTR).
+ * @param void
+ * @return byte-BSTR in EAX (FreeBASIC LoadSymbol_FB convention)
+ */
+void * __stdcall Exec_ZmqStrerrorString(void)
+{
+    LONG errnum;
+    const char *msg;
+
+    if (!tb_expect_open_parens()) {
+        return tb_return_string("");
+    }
+
+    if (!tb_parse_int(&errnum)) {
+        return tb_return_string("");
+    }
+
+    if (!tb_expect_close_parens()) {
+        return tb_return_string("");
+    }
+
+    msg = zmq_api_strerror((int)errnum);
+    
+    return tb_return_string(msg);
+}
+
+/**
  * @brief Get the major version of the ZeroMQ library.
  * @param void
  * @return double
