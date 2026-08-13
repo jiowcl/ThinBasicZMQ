@@ -117,6 +117,7 @@ Methods that are not reserved words (for example `CurveKeypair`, `StopwatchStart
 
 Native examples need only the ThinBasic interpreter (32-bit) and `Library\x86`.  
 The SDK module is built with Pelles C: `SDK\C\build_pelles.bat` (see [SDK/C/README.md](SDK/C/README.md)).  
+CI compiles the same sources with i686 MinGW (`SDK\C\build_mingw_ci.bat`, no `thinCore.lib`) via [`.github/workflows/ci.yml`](.github/workflows/ci.yml); it does not run ThinBasic scripts.  
 Type features require ThinBasic 1.4.0 and above.  
 
 ## Example

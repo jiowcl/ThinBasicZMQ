@@ -18,7 +18,7 @@ set of ZeroMQ keywords. This complements the native `#INCLUDE` API in `ThinBasic
 - **32-bit Pelles C** (supported build: `build_pelles.bat`)  
 - Package **x86** `libzmq.dll` + `libsodium.dll` under `ThinBasicZMQ\Library\x86\`  
 
-Optional: 32-bit MinGW (`i686-w64-mingw32-gcc`) and `C:\thinBasic\SDK\GCC\Lib\thinCore.lib` for `build.bat`. That path is not the ABI used by the Pelles module.
+Optional: 32-bit MinGW (`i686-w64-mingw32-gcc` / MSYS2 `mingw-w64-i686-gcc`) for `build_mingw_ci.bat` (compile gate; same ABI intent as Pelles). `build.bat` still needs `C:\thinBasic\SDK\GCC\Lib\thinCore.lib` and is **not** the Pelles ABI.
 
 > Do **not** use a 64-bit compiler output. ThinBasic cannot load x64 modules.
 
@@ -36,7 +36,19 @@ Does **not** link `thinCore.lib`; `tb_thincore.c` resolves thinCore APIs at runt
 (`_thinBasic_LoadSymbol` cdecl + `thinBasic_ParseLong` stdcall). Keywords are registered
 as `thinBasic_ReturnCodeLong`.
 
-### Option B — MinGW (not the Pelles ABI path)  
+### Option B — MinGW CI mirror (no `thinCore.lib`)
+
+```bat
+cd SDK\C
+build_mingw_ci.bat
+```
+
+Same sources as Pelles (`tb_thincore.c`, kernel32 only, i686). Used by
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) as a compile gate.
+CI does **not** run ThinBasic scripts; copy the artifact to `C:\thinBasic\Lib\`
+and test locally. Requires MSYS2 MinGW32 or `i686-w64-mingw32-gcc`.
+
+### Option C — MinGW + `thinCore.lib` (not the Pelles ABI path)
 
 ```bat
 cd SDK\C
@@ -176,6 +188,8 @@ Equates registered by the module (use as `%ZMQ_REQ`, etc.):
 ```
 SDK/C/
 ├── build_pelles.bat  supported (runtime thinCore bind, no thinCore.lib)
+├── build_mingw_ci.bat  i686 MinGW CI mirror (no thinCore.lib)
+├── verify_dll.ps1    PE i386 + export check (CI)
 ├── build.bat         MinGW + thinCore.lib (not the Pelles ABI path)
 ├── include/          thinCore.h (constants), tb_thincore.h, tb_parse.h, …
 ├── src/              tb_thincore.c, tb_zmq_exec.c, thinBasic_ZeroMQ.c, zmq_dynload.c

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "SDK/C/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "SDK/C/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+jobs:
+  build-sdk-dll:
+    name: Build thinBasic_ZeroMQ.dll (i686 MinGW)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2 MinGW32
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          update: false
+          install: mingw-w64-i686-gcc mingw-w64-i686-binutils
+
+      - name: Add MinGW32 to PATH
+        shell: pwsh
+        run: |
+          $bin = Join-Path "${{ steps.msys2.outputs.msys2-location }}" "mingw32\bin"
+          if (-not (Test-Path -LiteralPath (Join-Path $bin "gcc.exe"))) {
+            throw "gcc.exe not found under $bin"
+          }
+          Add-Content -Path $env:GITHUB_PATH -Value $bin
+          Write-Host "MinGW32 bin: $bin"
+
+      - name: Build (Pelles ABI mirror, no thinCore.lib)
+        shell: cmd
+        run: SDK\C\build_mingw_ci.bat
+
+      - name: Verify PE i386 and exports
+        shell: pwsh
+        run: |
+          $objdump = Join-Path "${{ steps.msys2.outputs.msys2-location }}" "mingw32\bin\objdump.exe"
+          & SDK\C\verify_dll.ps1 -DllPath "SDK\C\bin\thinBasic_ZeroMQ.dll" -Objdump $objdump
+
+      - name: Upload DLL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: thinBasic_ZeroMQ-x86
+          path: SDK/C/bin/thinBasic_ZeroMQ.dll
+          if-no-files-found: error
