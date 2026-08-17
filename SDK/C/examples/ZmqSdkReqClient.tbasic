@@ -15,9 +15,8 @@ Global hContext As Long
 Global hSocket As Long
 Global Rc As Long
 Global i As Long
-Global nRecvBytes As Long
 Global lpszSendMessage As String
-Global lpszRecvBuffer As String * 32
+Global lpszRecv As String
 
 lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
 lpszServerAddr = "tcp://127.0.0.1:1740"
@@ -41,11 +40,11 @@ Else
 
   For i = 0 To 10
     lpszSendMessage = "From SDK Client"
-    ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
-    nRecvBytes = ZmqRecv(hSocket, StrPtr(lpszRecvBuffer), 32, 0)
+    ZmqSendStr(hSocket, lpszSendMessage, 0)
+    lpszRecv = ZmqRecvStr(hSocket, 32, 0)
 
-    If nRecvBytes > 0 Then
-      Printl("Reply From Server: " & Left$(lpszRecvBuffer, nRecvBytes))
+    If Len(lpszRecv) > 0 Then
+      Printl("Reply From Server: " & lpszRecv)
     End If
   Next
 End If

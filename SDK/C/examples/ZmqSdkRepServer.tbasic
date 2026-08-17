@@ -15,8 +15,7 @@ Global hContext As Long
 Global hSocket As Long
 Global Rc As Long
 Global lTotal As Long
-Global nRecvBytes As Long
-Global lpszRecvBuffer As String * 32
+Global lpszRecv As String
 Global lpszSendMessage As String
 
 lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
@@ -42,12 +41,12 @@ Else
 
   While %TRUE
     lTotal = lTotal + 1
-    nRecvBytes = ZmqRecv(hSocket, StrPtr(lpszRecvBuffer), 32, 0)
+    lpszRecv = ZmqRecvStr(hSocket, 32, 0)
 
-    If nRecvBytes > 0 Then
-      Printl("Received: " & Left$(lpszRecvBuffer, nRecvBytes))
+    If Len(lpszRecv) > 0 Then
+      Printl("Received: " & lpszRecv)
       lpszSendMessage = "Hi " & lTotal
-      ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+      ZmqSendStr(hSocket, lpszSendMessage, 0)
     End If
   Wend
 End If

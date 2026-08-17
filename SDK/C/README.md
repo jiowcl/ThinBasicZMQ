@@ -155,6 +155,8 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 | `ZmqCtxSet` / `ZmqCtxGet` | Context options (`%ZMQ_IO_THREADS`, `%ZMQ_MAX_SOCKETS`) |
 | `ZmqSocket` / `ZmqClose` / `ZmqBind` / `ZmqUnbind` / `ZmqConnect` / `ZmqDisconnect` | Socket |
 | `ZmqSend` / `ZmqRecv` | Buffer via `StrPtr` / `VarPtr` |
+| `ZmqSendStr(hSock, msg$, flags)` | ThinBasic `String`; returns bytes sent or -1; max 4096 |
+| `ZmqRecvStr(hSock, maxLen, flags)` | ThinBasic `String` (BSTR via `LoadSymbol_FB`); maxLen capped at 4096; empty on error/timeout/empty frame |
 | `ZmqSetsockoptInt` / `ZmqSetsockoptStr` / `ZmqGetsockoptInt` | Options |
 | `ZmqErrno` / `ZmqStrerror` | Error helpers (`ZmqStrerror` returns ASCIIZ pointer) |
 | `ZmqStrerrorString(errnum)` | ThinBasic `String` (BSTR); prefer this for `Printl` |

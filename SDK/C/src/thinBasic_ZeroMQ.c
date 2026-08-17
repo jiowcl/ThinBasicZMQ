@@ -41,6 +41,8 @@ LONG __cdecl Exec_ZmqConnect(void);
 LONG __cdecl Exec_ZmqDisconnect(void);
 LONG __cdecl Exec_ZmqSend(void);
 LONG __cdecl Exec_ZmqRecv(void);
+LONG __cdecl Exec_ZmqSendStr(void);
+void * __stdcall Exec_ZmqRecvStr(void);
 LONG __cdecl Exec_ZmqSetsockoptInt(void);
 LONG __cdecl Exec_ZmqSetsockoptStr(void);
 LONG __cdecl Exec_ZmqGetsockoptInt(void);
@@ -104,6 +106,8 @@ static void tb_zmq_register_symbols(void)
     tb_zmq_register_symbol("ZmqDisconnect", thinBasic_ReturnCodeLong, &Exec_ZmqDisconnect);
     tb_zmq_register_symbol("ZmqSend", thinBasic_ReturnCodeLong, &Exec_ZmqSend);
     tb_zmq_register_symbol("ZmqRecv", thinBasic_ReturnCodeLong, &Exec_ZmqRecv);
+    tb_zmq_register_symbol("ZmqSendStr", thinBasic_ReturnCodeLong, &Exec_ZmqSendStr);
+    tb_LoadSymbolFB("ZmqRecvStr", thinBasic_ReturnString, (void *)&Exec_ZmqRecvStr, thinBasic_ForceOverWrite);
     tb_zmq_register_symbol("ZmqSetsockoptInt", thinBasic_ReturnCodeLong, &Exec_ZmqSetsockoptInt);
     tb_zmq_register_symbol("ZmqSetsockoptStr", thinBasic_ReturnCodeLong, &Exec_ZmqSetsockoptStr);
     tb_zmq_register_symbol("ZmqGetsockoptInt", thinBasic_ReturnCodeLong, &Exec_ZmqGetsockoptInt);

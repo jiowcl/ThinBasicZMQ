@@ -15,11 +15,10 @@ Global hSocketRep As Long
 Global hSocketReq As Long
 Global lpszServerAddr As String
 Global lpszSendMessage As String
-Global nRecvBytes As Long
+Global lpszRecv As String
 Global nMajor As Long
 Global nMinor As Long
 Global nPatch As Long
-Global lpszRecvBuffer As String * 64
 
 lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
 lpszServerAddr = "tcp://127.0.0.1:1735"
@@ -42,17 +41,17 @@ ZmqConnect(hSocketReq, lpszServerAddr)
 Sleep 50
 
 lpszSendMessage = "From SDK Client"
-ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
-nRecvBytes = ZmqRecv(hSocketRep, StrPtr(lpszRecvBuffer), 64, 0)
-If nRecvBytes > 0 Then
-  Printl("REP received: " & Left$(lpszRecvBuffer, nRecvBytes))
+ZmqSendStr(hSocketReq, lpszSendMessage, 0)
+lpszRecv = ZmqRecvStr(hSocketRep, 64, 0)
+If Len(lpszRecv) > 0 Then
+  Printl("REP received: " & lpszRecv)
   lpszSendMessage = "Hi from SDK"
-  ZmqSend(hSocketRep, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+  ZmqSendStr(hSocketRep, lpszSendMessage, 0)
 End If
 
-nRecvBytes = ZmqRecv(hSocketReq, StrPtr(lpszRecvBuffer), 64, 0)
-If nRecvBytes > 0 Then
-  Printl("REQ reply: " & Left$(lpszRecvBuffer, nRecvBytes))
+lpszRecv = ZmqRecvStr(hSocketReq, 64, 0)
+If Len(lpszRecv) > 0 Then
+  Printl("REQ reply: " & lpszRecv)
 End If
 
 ZmqClose(hSocketReq)

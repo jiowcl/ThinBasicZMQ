@@ -665,6 +665,133 @@ LONG __cdecl Exec_ZmqRecv(void)
 }
 
 /**
+ * @brief Send a ThinBasic String on a ZeroMQ socket.
+ * @param void
+ * @return bytes sent, or -1
+ */
+LONG __cdecl Exec_ZmqSendStr(void)
+{
+    LONG  socket;
+    LONG  flags;
+    char *msg;
+    DWORD len;
+    char  copy[TB_RETURN_STRING_MAX];
+
+    if (!tb_expect_open_parens()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&socket)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_string(&msg, &len)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&flags)) {
+        return 0;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return 0;
+    }
+
+    if (len > sizeof(copy)) {
+        return -1;
+    }
+
+    if (len > 0) {
+        memcpy(copy, msg, len);
+    }
+
+    return (LONG)zmq_api_send(
+        tb_ptr_from_handle(socket),
+        copy,
+        (size_t)len,
+        (int)flags);
+}
+
+/**
+ * @brief Receive a message as a ThinBasic String (BSTR).
+ * @param void
+ * @return byte-BSTR in EAX (FreeBASIC LoadSymbol_FB convention)
+ *
+ * Empty string on parse failure, timeout/error, or a zero-length frame.
+ * maxLen is capped at TB_RETURN_STRING_MAX (4096).
+ */
+void * __stdcall Exec_ZmqRecvStr(void)
+{
+    LONG socket;
+    LONG max_len;
+    LONG flags;
+    char buf[TB_RETURN_STRING_MAX];
+    int  n;
+    size_t copied;
+
+    if (!tb_expect_open_parens()) {
+        return tb_return_string("");
+    }
+
+    if (!tb_parse_int(&socket)) {
+        return tb_return_string("");
+    }
+
+    if (!tb_expect_comma()) {
+        return tb_return_string("");
+    }
+
+    if (!tb_parse_int(&max_len)) {
+        return tb_return_string("");
+    }
+
+    if (!tb_expect_comma()) {
+        return tb_return_string("");
+    }
+
+    if (!tb_parse_int(&flags)) {
+        return tb_return_string("");
+    }
+
+    if (!tb_expect_close_parens()) {
+        return tb_return_string("");
+    }
+
+    if (max_len <= 0) {
+        return tb_return_string("");
+    }
+
+    if (max_len > (LONG)TB_RETURN_STRING_MAX) {
+        max_len = (LONG)TB_RETURN_STRING_MAX;
+    }
+
+    n = zmq_api_recv(
+        tb_ptr_from_handle(socket),
+        buf,
+        (size_t)max_len,
+        (int)flags);
+
+    if (n < 0) {
+        return tb_return_string("");
+    }
+
+    copied = (size_t)n;
+    if (copied > (size_t)max_len) {
+        copied = (size_t)max_len;
+    }
+
+    return tb_return_string_n(buf, copied);
+}
+
+/**
  * @brief Set a socket option.
  * @param void
  * @return double

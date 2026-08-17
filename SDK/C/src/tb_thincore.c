@@ -230,35 +230,54 @@ DWORD tb_CheckCloseParens(DWORD HideError, DWORD AutoPutBack)
 }
 
 /**
- * @brief Allocate a ThinBasic return string (byte BSTR).
+ * @brief Allocate a ThinBasic return string (byte BSTR) with an explicit length.
+ * @param sz bytes to copy; ignored when len is 0
+ * @param len number of bytes (capped at TB_RETURN_STRING_MAX)
+ * @return BSTR pointer for EAX, or NULL if oleaut32 is unavailable
+ */
+void *tb_return_string_n(const char *sz, size_t len)
+{
+    if (g_tb.alloc_bstr == NULL) {
+        return NULL;
+    }
+
+    if (sz == NULL || len == 0) {
+        return g_tb.alloc_bstr(NULL, 0);
+    }
+
+    if (len > TB_RETURN_STRING_MAX) {
+        return g_tb.alloc_bstr(NULL, 0);
+    }
+
+    return g_tb.alloc_bstr(sz, (UINT)len);
+}
+
+/**
+ * @brief Allocate a ThinBasic return string from a NUL-terminated C string.
  * @param sz ASCII text, or NULL for empty
  * @return BSTR pointer for EAX, or NULL
  *
  * Official FreeBASIC modules use SysAllocStringByteLen + thinBasic_ReturnString.
  * thinBasic owns the BSTR and will free it. Do not return a C string pointer.
+ * Unterminated input (no NUL within TB_RETURN_STRING_MAX) returns NULL.
  */
 void *tb_return_string(const char *sz)
 {
     size_t len;
-    const size_t max_len = 4096;
-
-    if (g_tb.alloc_bstr == NULL) {
-        return NULL;
-    }
 
     if (sz == NULL || sz[0] == '\0') {
-        return g_tb.alloc_bstr(NULL, 0);
+        return tb_return_string_n(NULL, 0);
     }
 
-    for (len = 0; len < max_len; len++) {
+    for (len = 0; len < TB_RETURN_STRING_MAX; len++) {
         if (sz[len] == '\0') {
             break;
         }
     }
 
-    if (len == 0 || len >= max_len) {
+    if (len == 0 || len >= TB_RETURN_STRING_MAX) {
         return NULL;
     }
 
-    return g_tb.alloc_bstr(sz, (UINT)len);
+    return tb_return_string_n(sz, len);
 }

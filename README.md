@@ -77,7 +77,7 @@ Samples:
 | Build | None (includes only) | `SDK\C\build_pelles.bat` → `thinBasic_ZeroMQ.dll` |
 | Constants | `$ZMQ_*` in `Enums.inc` | `%ZMQ_*` registered by the module |
 
-See [SDK/C/README.md](SDK/C/README.md) for build, install, and the **ABI contract** (`LONG` in EAX, string BSTR via `LoadSymbol_FB`, `ParseLong`, `ParseString As Ext`). Do not mix `#INCLUDE` Core files with `USES "ZeroMQ"`.
+See [SDK/C/README.md](SDK/C/README.md) for build, install, and the **ABI contract** (`LONG` in EAX, string BSTR via `LoadSymbol_FB`, `ParseLong`, `ParseString As Ext`). SDK scripts can use `ZmqSendStr` / `ZmqRecvStr` instead of `StrPtr`. Do not mix `#INCLUDE` Core files with `USES "ZeroMQ"`.
 
 Typical includes:
 
