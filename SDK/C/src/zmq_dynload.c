@@ -68,36 +68,53 @@ typedef struct zmq_api_table {
 static zmq_api_table g_zmq;
 
 /**
+ * @brief Resolve a libzmq export without a direct FARPROC-to-fn-ptr cast.
+ * @param name
+ * @return void *
+ */
+static void *zmq_resolve(const char *name)
+{
+    FARPROC fn;
+
+    fn = GetProcAddress(g_zmq.module, name);
+    if (fn == NULL) {
+        return NULL;
+    }
+
+    return (void *)(INT_PTR)fn;
+}
+
+/**
  * @brief Bind required symbols.
  * @param void
  * @return int
  */
 static int zmq_bind_required_symbols(void)
 {
-    g_zmq.ctx_new = (zmq_ctx_new_fn)GetProcAddress(g_zmq.module, "zmq_ctx_new");
-    g_zmq.ctx_term = (zmq_ctx_term_fn)GetProcAddress(g_zmq.module, "zmq_ctx_term");
-    g_zmq.ctx_shutdown = (zmq_ctx_shutdown_fn)GetProcAddress(g_zmq.module, "zmq_ctx_shutdown");
-    g_zmq.ctx_set = (zmq_ctx_set_fn)GetProcAddress(g_zmq.module, "zmq_ctx_set");
-    g_zmq.ctx_get = (zmq_ctx_get_fn)GetProcAddress(g_zmq.module, "zmq_ctx_get");
-    g_zmq.socket = (zmq_socket_fn)GetProcAddress(g_zmq.module, "zmq_socket");
-    g_zmq.close = (zmq_close_fn)GetProcAddress(g_zmq.module, "zmq_close");
-    g_zmq.bind = (zmq_bind_fn)GetProcAddress(g_zmq.module, "zmq_bind");
-    g_zmq.unbind = (zmq_unbind_fn)GetProcAddress(g_zmq.module, "zmq_unbind");
-    g_zmq.connect = (zmq_connect_fn)GetProcAddress(g_zmq.module, "zmq_connect");
-    g_zmq.disconnect = (zmq_disconnect_fn)GetProcAddress(g_zmq.module, "zmq_disconnect");
-    g_zmq.send = (zmq_send_fn)GetProcAddress(g_zmq.module, "zmq_send");
-    g_zmq.recv = (zmq_recv_fn)GetProcAddress(g_zmq.module, "zmq_recv");
-    g_zmq.errno_fn = (zmq_errno_fn)GetProcAddress(g_zmq.module, "zmq_errno");
-    g_zmq.strerror_fn = (zmq_strerror_fn)GetProcAddress(g_zmq.module, "zmq_strerror");
-    g_zmq.version = (zmq_version_fn)GetProcAddress(g_zmq.module, "zmq_version");
-    g_zmq.has = (zmq_has_fn)GetProcAddress(g_zmq.module, "zmq_has");
-    g_zmq.setsockopt = (zmq_setsockopt_fn)GetProcAddress(g_zmq.module, "zmq_setsockopt");
-    g_zmq.getsockopt = (zmq_getsockopt_fn)GetProcAddress(g_zmq.module, "zmq_getsockopt");
+    g_zmq.ctx_new = (zmq_ctx_new_fn)zmq_resolve("zmq_ctx_new");
+    g_zmq.ctx_term = (zmq_ctx_term_fn)zmq_resolve("zmq_ctx_term");
+    g_zmq.ctx_shutdown = (zmq_ctx_shutdown_fn)zmq_resolve("zmq_ctx_shutdown");
+    g_zmq.ctx_set = (zmq_ctx_set_fn)zmq_resolve("zmq_ctx_set");
+    g_zmq.ctx_get = (zmq_ctx_get_fn)zmq_resolve("zmq_ctx_get");
+    g_zmq.socket = (zmq_socket_fn)zmq_resolve("zmq_socket");
+    g_zmq.close = (zmq_close_fn)zmq_resolve("zmq_close");
+    g_zmq.bind = (zmq_bind_fn)zmq_resolve("zmq_bind");
+    g_zmq.unbind = (zmq_unbind_fn)zmq_resolve("zmq_unbind");
+    g_zmq.connect = (zmq_connect_fn)zmq_resolve("zmq_connect");
+    g_zmq.disconnect = (zmq_disconnect_fn)zmq_resolve("zmq_disconnect");
+    g_zmq.send = (zmq_send_fn)zmq_resolve("zmq_send");
+    g_zmq.recv = (zmq_recv_fn)zmq_resolve("zmq_recv");
+    g_zmq.errno_fn = (zmq_errno_fn)zmq_resolve("zmq_errno");
+    g_zmq.strerror_fn = (zmq_strerror_fn)zmq_resolve("zmq_strerror");
+    g_zmq.version = (zmq_version_fn)zmq_resolve("zmq_version");
+    g_zmq.has = (zmq_has_fn)zmq_resolve("zmq_has");
+    g_zmq.setsockopt = (zmq_setsockopt_fn)zmq_resolve("zmq_setsockopt");
+    g_zmq.getsockopt = (zmq_getsockopt_fn)zmq_resolve("zmq_getsockopt");
     /* Optional: older builds may lack CURVE / Z85 helpers. */
-    g_zmq.curve_keypair = (zmq_curve_keypair_fn)GetProcAddress(g_zmq.module, "zmq_curve_keypair");
-    g_zmq.curve_public = (zmq_curve_public_fn)GetProcAddress(g_zmq.module, "zmq_curve_public");
-    g_zmq.z85_encode = (zmq_z85_encode_fn)GetProcAddress(g_zmq.module, "zmq_z85_encode");
-    g_zmq.z85_decode = (zmq_z85_decode_fn)GetProcAddress(g_zmq.module, "zmq_z85_decode");
+    g_zmq.curve_keypair = (zmq_curve_keypair_fn)zmq_resolve("zmq_curve_keypair");
+    g_zmq.curve_public = (zmq_curve_public_fn)zmq_resolve("zmq_curve_public");
+    g_zmq.z85_encode = (zmq_z85_encode_fn)zmq_resolve("zmq_z85_encode");
+    g_zmq.z85_decode = (zmq_z85_decode_fn)zmq_resolve("zmq_z85_decode");
 
     return g_zmq.ctx_new && g_zmq.ctx_term && g_zmq.ctx_shutdown &&
            g_zmq.ctx_set && g_zmq.ctx_get && g_zmq.socket &&
