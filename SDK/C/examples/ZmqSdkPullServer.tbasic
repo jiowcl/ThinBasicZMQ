@@ -15,8 +15,7 @@ Global hContext As Long
 Global hSocket As Long
 Global Rc As Long
 Global lTotal As Long
-Global nRecvBytes As Long
-Global lpszRecvBuffer As String * 64
+Global lpszRecv As String
 
 lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
 lpszServerAddr = "tcp://*:1743"
@@ -40,11 +39,11 @@ Else
   lTotal = 0
 
   While %TRUE
-    nRecvBytes = ZmqRecv(hSocket, StrPtr(lpszRecvBuffer), 64, 0)
+    lpszRecv = ZmqRecvStr(hSocket, 64, 0)
 
-    If nRecvBytes > 0 Then
+    If Len(lpszRecv) > 0 Then
       lTotal = lTotal + 1
-      Printl("Pulled #" & lTotal & ": " & Left$(lpszRecvBuffer, nRecvBytes))
+      Printl("Pulled #" & lTotal & ": " & lpszRecv)
     End If
   Wend
 End If

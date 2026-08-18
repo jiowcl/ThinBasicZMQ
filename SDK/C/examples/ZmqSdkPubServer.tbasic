@@ -52,9 +52,9 @@ Else
     nAsk = Int(RndRange(1000, 9000))
     lpszSendMessage = "Bid:" & Str$(nBid) & ",Ask:" & Str$(nAsk)
 
-    If ZmqSend(hSocket, StrPtr(lpszTopic), Len(lpszTopic), %ZMQ_SNDMORE) = -1 Then
+    If ZmqSendStr(hSocket, lpszTopic, %ZMQ_SNDMORE) = -1 Then
       Printl("Send topic failed: " & ZmqStrerrorString(ZmqErrno()))
-    ElseIf ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+    ElseIf ZmqSendStr(hSocket, lpszSendMessage, 0) = -1 Then
       Printl("Send message failed: " & ZmqStrerrorString(ZmqErrno()))
     Else
       Printl("Published: " & lpszSendMessage)

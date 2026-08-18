@@ -19,8 +19,7 @@ Global lpszServerSecret As String * 41
 Global lpszClientPublic As String * 41
 Global lpszClientSecret As String * 41
 Global lpszSendMessage As String
-Global lpszRecvBuffer As String * 64
-Global nRecvBytes As Long
+Global lpszRecv As String
 Global nLoop As Long
 Global nReplyCount As Long
 Global nMechanism As Long
@@ -69,28 +68,28 @@ Else
   nReplyCount = 0
   For nLoop = 1 To 3
     lpszSendMessage = "From Curve Client"
-    If ZmqSend(hSocketReq, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+    If ZmqSendStr(hSocketReq, lpszSendMessage, 0) = -1 Then
       Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
       Exit For
     End If
 
-    nRecvBytes = ZmqRecv(hSocketRep, StrPtr(lpszRecvBuffer), 64, 0)
-    If nRecvBytes < 0 Then
+    lpszRecv = ZmqRecvStr(hSocketRep, 64, 0)
+    If Len(lpszRecv) = 0 Then
       Printl("REP recv failed: " & ZmqStrerrorString(ZmqErrno()))
       Exit For
     End If
 
-    Printl("REP received: " & Left$(lpszRecvBuffer, nRecvBytes))
+    Printl("REP received: " & lpszRecv)
     lpszSendMessage = "Curve Hi"
-    ZmqSend(hSocketRep, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0)
+    ZmqSendStr(hSocketRep, lpszSendMessage, 0)
 
-    nRecvBytes = ZmqRecv(hSocketReq, StrPtr(lpszRecvBuffer), 64, 0)
-    If nRecvBytes < 0 Then
+    lpszRecv = ZmqRecvStr(hSocketReq, 64, 0)
+    If Len(lpszRecv) = 0 Then
       Printl("REQ recv failed: " & ZmqStrerrorString(ZmqErrno()))
       Exit For
     End If
 
-    Printl("Client Reply: " & Left$(lpszRecvBuffer, nRecvBytes))
+    Printl("Client Reply: " & lpszRecv)
     nReplyCount = nReplyCount + 1
   Next
 

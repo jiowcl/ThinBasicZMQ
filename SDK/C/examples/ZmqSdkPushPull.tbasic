@@ -20,7 +20,7 @@ Global i As Long
 Global nRecvBytes As Long
 Global nGot As Long
 Global lpszSendMessage As String
-Global lpszRecvBuffer As String * 64
+Global lpszRecv As String
 
 lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
 lpszBindAddr = "tcp://127.0.0.1:1743"
@@ -53,19 +53,19 @@ Else
     nGot = 0
     For i = 1 To 5
       lpszSendMessage = "Job " & i
-      If ZmqSend(hPush, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
-        Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
-        Exit For
-      End If
+    If ZmqSendStr(hPush, lpszSendMessage, 0) = -1 Then
+      Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
+      Exit For
+    End If
 
-      nRecvBytes = ZmqRecv(hPull, StrPtr(lpszRecvBuffer), 64, 0)
-      If nRecvBytes < 0 Then
-        Printl("Recv failed: " & ZmqStrerrorString(ZmqErrno()))
-        Exit For
-      End If
+    lpszRecv = ZmqRecvStr(hPull, 64, 0)
+    If Len(lpszRecv) = 0 Then
+      Printl("Recv failed: " & ZmqStrerrorString(ZmqErrno()))
+      Exit For
+    End If
 
-      Printl("Pulled: " & Left$(lpszRecvBuffer, nRecvBytes))
-      nGot = nGot + 1
+    Printl("Pulled: " & lpszRecv)
+    nGot = nGot + 1
     Next
 
     Printl("Jobs: " & nGot)

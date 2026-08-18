@@ -15,10 +15,8 @@ Global lpszSubscribe As String
 Global hContext As Long
 Global hSocket As Long
 Global Rc As Long
-Global TopicBytes As Long
-Global MessageBytes As Long
-Global lpszTopicBuffer As String * 256
-Global lpszRecvBuffer As String * 256
+Global lpszTopicFrame As String
+Global lpszMessageFrame As String
 
 lpszLibPath = APP_SourcePath & "..\..\..\ThinBasicZMQ\Library\x86"
 lpszServerAddr = "tcp://127.0.0.1:1741"
@@ -48,17 +46,15 @@ Else
     Printl("Connected: " & lpszServerAddr & " (subscribe=" & lpszSubscribe & ")")
 
     While %TRUE
-      TopicBytes = ZmqRecv(hSocket, StrPtr(lpszTopicBuffer), 256, 0)
-
-      If TopicBytes = -1 Then
+      lpszTopicFrame = ZmqRecvStr(hSocket, 256, 0)
+      If Len(lpszTopicFrame) = 0 Then
         Printl("Recv topic failed: " & ZmqStrerrorString(ZmqErrno()))
       Else
-        MessageBytes = ZmqRecv(hSocket, StrPtr(lpszRecvBuffer), 256, 0)
-
-        If MessageBytes = -1 Then
+        lpszMessageFrame = ZmqRecvStr(hSocket, 256, 0)
+        If Len(lpszMessageFrame) = 0 Then
           Printl("Recv message failed: " & ZmqStrerrorString(ZmqErrno()))
-        ElseIf MessageBytes > 0 Then
-          Printl(Left$(lpszRecvBuffer, MessageBytes))
+        Else
+          Printl(lpszMessageFrame)
         End If
       End If
     Wend

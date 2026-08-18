@@ -39,7 +39,7 @@ Else
 
   For i = 0 To 10
     lpszSendMessage = "Push " & i
-    If ZmqSend(hSocket, StrPtr(lpszSendMessage), Len(lpszSendMessage), 0) = -1 Then
+    If ZmqSendStr(hSocket, lpszSendMessage, 0) = -1 Then
       Printl("Send failed: " & ZmqStrerrorString(ZmqErrno()))
       Exit For
     End If
