@@ -48,8 +48,11 @@ LONG __cdecl Exec_ZmqSetsockoptStr(void);
 LONG __cdecl Exec_ZmqGetsockoptInt(void);
 LONG __cdecl Exec_ZmqCurveKeypair(void);
 LONG __cdecl Exec_ZmqCurvePublic(void);
+void * __stdcall Exec_ZmqCurvePublicStr(void);
 LONG __cdecl Exec_ZmqZ85Encode(void);
 LONG __cdecl Exec_ZmqZ85Decode(void);
+void * __stdcall Exec_ZmqZ85EncodeStr(void);
+LONG __cdecl Exec_ZmqZ85DecodeStr(void);
 
 /**
  * @brief Register a symbol.
@@ -113,8 +116,11 @@ static void tb_zmq_register_symbols(void)
     tb_zmq_register_symbol("ZmqGetsockoptInt", thinBasic_ReturnCodeLong, &Exec_ZmqGetsockoptInt);
     tb_zmq_register_symbol("ZmqCurveKeypair", thinBasic_ReturnCodeLong, &Exec_ZmqCurveKeypair);
     tb_zmq_register_symbol("ZmqCurvePublic", thinBasic_ReturnCodeLong, &Exec_ZmqCurvePublic);
+    tb_LoadSymbolFB("ZmqCurvePublicStr", thinBasic_ReturnString, (void *)&Exec_ZmqCurvePublicStr, thinBasic_ForceOverWrite);
     tb_zmq_register_symbol("ZmqZ85Encode", thinBasic_ReturnCodeLong, &Exec_ZmqZ85Encode);
     tb_zmq_register_symbol("ZmqZ85Decode", thinBasic_ReturnCodeLong, &Exec_ZmqZ85Decode);
+    tb_LoadSymbolFB("ZmqZ85EncodeStr", thinBasic_ReturnString, (void *)&Exec_ZmqZ85EncodeStr, thinBasic_ForceOverWrite);
+    tb_zmq_register_symbol("ZmqZ85DecodeStr", thinBasic_ReturnCodeLong, &Exec_ZmqZ85DecodeStr);
 }
 
 /**

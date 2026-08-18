@@ -10,7 +10,7 @@ set of ZeroMQ keywords. This complements the native `#INCLUDE` API in `ThinBasic
 
 | Artifact | Purpose |
 |----------|---------|
-| `bin/thinBasic_ZeroMQ.dll` | ThinBasic module (install to `C:\thinBasic\Lib\`) |
+| `bin/thinBasic_ZeroMQ.dll` | ThinBasic module (install to `C:\thinBasic\Lib\`); VERSIONINFO in `lib/thinBasic_ZeroMQ.rc` |
 
 ## Prerequisites  
 
@@ -164,8 +164,11 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 | `ZmqHas(capability)` | `zmq_has` |
 | `ZmqCurveKeypair(pubPtr, secPtr)` | Fill two Z85 buffers (`StrPtr` / `VarPtr`, ≥41 bytes); 0 on success |
 | `ZmqCurvePublic(pubPtr, secret$)` | Derive Z85 public from 40-char secret; 0 on success |
+| `ZmqCurvePublicStr(secret$)` | ThinBasic `String` (BSTR); empty on failure. Aligns with Native `ZmqCurvePublicStr` |
 | `ZmqZ85Encode(destPtr, dataPtr, size)` | size multiple of 4; dest ≥ `size*5/4+1`; returns dest or 0 |
 | `ZmqZ85Decode(destPtr, encoded$)` | encoded length multiple of 5; dest ≥ `len*4/5`; returns dest or 0 |
+| `ZmqZ85EncodeStr(dataPtr, size)` | ThinBasic `String` (BSTR); size multiple of 4; empty on failure. Aligns with Native |
+| `ZmqZ85DecodeStr(encoded$, destPtr, destSize)` | Writes binary to dest; returns dest or 0. Aligns with Native `ZmqZ85DecodeStr` |
 
 Equates registered by the module (use as `%ZMQ_REQ`, etc.):
 
@@ -195,7 +198,7 @@ SDK/C/
 ├── build.bat         MinGW + thinCore.lib (not the Pelles ABI path)
 ├── include/          thinCore.h (constants), tb_thincore.h, tb_parse.h, …
 ├── src/              tb_thincore.c, tb_zmq_exec.c, thinBasic_ZeroMQ.c, zmq_dynload.c
-├── lib/              thinBasic_ZeroMQ.def
+├── lib/              thinBasic_ZeroMQ.def, thinBasic_ZeroMQ.rc, version metadata
 ├── examples/         Smoke, REQ/REP, PUB/SUB, Curve, PUSH/PULL, Z85, Ctx
 └── bin/              build output (gitignored)
 ```

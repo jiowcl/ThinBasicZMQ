@@ -36,8 +36,12 @@ if errorlevel 1 exit /b 1
 pocc %CCFLAGS% /Fo"%OBJ%\thinBasic_ZeroMQ.obj" "%SRC%\thinBasic_ZeroMQ.c"
 if errorlevel 1 exit /b 1
 
+porc /Fo"%OBJ%\thinBasic_ZeroMQ.res" /I"%INC%" "%DEFDIR%\thinBasic_ZeroMQ.rc"
+if errorlevel 1 exit /b 1
+
 polink /DLL /DEF:"%DEFDIR%\thinBasic_ZeroMQ.def" /OUT:"%OUT%\thinBasic_ZeroMQ.dll" ^
     "%OBJ%\zmq_dynload.obj" "%OBJ%\tb_thincore.obj" "%OBJ%\tb_zmq_exec.obj" "%OBJ%\thinBasic_ZeroMQ.obj" ^
+    "%OBJ%\thinBasic_ZeroMQ.res" ^
     kernel32.lib
 if errorlevel 1 (
     echo.

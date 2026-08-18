@@ -1120,6 +1120,166 @@ LONG __cdecl Exec_ZmqZ85Decode(void)
 }
 
 /**
+ * @brief Encode binary data as a ThinBasic Z85 String (BSTR).
+ * @param void
+ * @return byte-BSTR in EAX; empty on failure
+ *
+ * Aligns with Native ZmqZ85EncodeStr(pData, nLen). size must be a multiple of 4.
+ * Encoded length is capped so the result fits TB_RETURN_STRING_MAX.
+ */
+void * __stdcall Exec_ZmqZ85EncodeStr(void)
+{
+    LONG  data;
+    LONG  size;
+    char  dest[TB_RETURN_STRING_MAX];
+    size_t encoded_len;
+    char *out;
+
+    if (!tb_expect_open_parens()) {
+        return tb_return_string("");
+    }
+
+    if (!tb_parse_int(&data)) {
+        return tb_return_string("");
+    }
+
+    if (!tb_expect_comma()) {
+        return tb_return_string("");
+    }
+
+    if (!tb_parse_int(&size)) {
+        return tb_return_string("");
+    }
+
+    if (!tb_expect_close_parens()) {
+        return tb_return_string("");
+    }
+
+    if (data == 0 || size <= 0 || (size & 3) != 0) {
+        return tb_return_string("");
+    }
+
+    encoded_len = ((size_t)size * 5) / 4;
+    if (encoded_len == 0 || encoded_len >= TB_RETURN_STRING_MAX) {
+        return tb_return_string("");
+    }
+
+    dest[0] = '\0';
+    out = zmq_api_z85_encode(dest, tb_ptr_from_handle(data), (size_t)size);
+    if (out == NULL) {
+        return tb_return_string("");
+    }
+
+    return tb_return_string(dest);
+}
+
+/**
+ * @brief Decode Z85 text into a caller buffer (Native ZmqZ85DecodeStr).
+ * @param void
+ * @return LONG dest pointer on success, 0 on failure
+ */
+LONG __cdecl Exec_ZmqZ85DecodeStr(void)
+{
+    char *encoded;
+    DWORD len;
+    LONG  dest;
+    LONG  dest_size;
+    DWORD need;
+    char  encoded_copy[TB_RETURN_STRING_MAX];
+    unsigned char *out;
+
+    if (!tb_expect_open_parens()) {
+        return 0;
+    }
+
+    if (!tb_parse_string(&encoded, &len)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&dest)) {
+        return 0;
+    }
+
+    if (!tb_expect_comma()) {
+        return 0;
+    }
+
+    if (!tb_parse_int(&dest_size)) {
+        return 0;
+    }
+
+    if (!tb_expect_close_parens()) {
+        return 0;
+    }
+
+    if (dest == 0 || dest_size <= 0 || len == 0 || (len % 5) != 0 ||
+        len >= sizeof(encoded_copy)) {
+        return 0;
+    }
+
+    need = (len * 4) / 5;
+    if (need == 0 || (DWORD)dest_size < need) {
+        return 0;
+    }
+
+    memcpy(encoded_copy, encoded, len);
+    encoded_copy[len] = '\0';
+
+    out = zmq_api_z85_decode(
+        (unsigned char *)tb_ptr_from_handle(dest),
+        encoded_copy);
+
+    return (LONG)(intptr_t)out;
+}
+
+/**
+ * @brief Derive a CURVE public Z85 key as a ThinBasic String (BSTR).
+ * @param void
+ * @return byte-BSTR in EAX; empty on failure
+ *
+ * Aligns with Native ZmqCurvePublicStr(z85Secret). Secret must be 40 Z85 chars.
+ */
+void * __stdcall Exec_ZmqCurvePublicStr(void)
+{
+    char *secret;
+    DWORD len;
+    char  secret_copy[ZMQ_CURVE_KEYSIZE_Z85 + 1];
+    char  public_buf[ZMQ_CURVE_KEYSIZE_Z85 + 1];
+
+    if (!tb_expect_open_parens()) {
+        return tb_return_string("");
+    }
+
+    if (!tb_parse_string(&secret, &len)) {
+        return tb_return_string("");
+    }
+
+    if (!tb_expect_close_parens()) {
+        return tb_return_string("");
+    }
+
+    if (len != (DWORD)ZMQ_CURVE_KEYSIZE_Z85) {
+        return tb_return_string("");
+    }
+
+    memcpy(secret_copy, secret, len);
+    secret_copy[len] = '\0';
+    public_buf[0] = '\0';
+
+    if (zmq_api_curve_public(public_buf, secret_copy) != 0) {
+        return tb_return_string("");
+    }
+
+    public_buf[ZMQ_CURVE_KEYSIZE_Z85] = '\0';
+    
+    return tb_return_string(public_buf);
+}
+
+/**
  * @brief Set a context option.
  * @param void
  * @return LONG

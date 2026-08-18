@@ -80,8 +80,21 @@ if errorlevel 1 exit /b 1
 "%CC%" %CFLAGS% -I"%INC%" -c "%SRC%\thinBasic_ZeroMQ.c"  -o "%OBJ%\thinBasic_ZeroMQ.o"
 if errorlevel 1 exit /b 1
 
+set "WINDRES="
+if exist "%CCDIR%windres.exe" set "WINDRES=%CCDIR%windres.exe"
+if not defined WINDRES where windres.exe >nul 2>&1
+if not errorlevel 1 set "WINDRES=windres.exe"
+if not defined WINDRES (
+    echo ERROR: windres.exe not found (needed for VERSIONINFO).
+    exit /b 1
+)
+
+"%WINDRES%" -I "%INC%" -i "%DEFDIR%\thinBasic_ZeroMQ.rc" -o "%OBJ%\thinBasic_ZeroMQ_res.o"
+if errorlevel 1 exit /b 1
+
 "%CC%" -shared -Wl,--enable-stdcall-fixup ^
     "%OBJ%\zmq_dynload.o" "%OBJ%\tb_thincore.o" "%OBJ%\tb_zmq_exec.o" "%OBJ%\thinBasic_ZeroMQ.o" ^
+    "%OBJ%\thinBasic_ZeroMQ_res.o" ^
     "%DEFDIR%\thinBasic_ZeroMQ.def" -lkernel32 ^
     -o "%OUT%\thinBasic_ZeroMQ.dll"
 if errorlevel 1 (

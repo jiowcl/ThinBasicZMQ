@@ -1,0 +1,40 @@
+/*
+ * thinBasic_ZeroMQ.rc — Windows VERSIONINFO for thinBasic_ZeroMQ.dll
+ */
+
+#include <winver.h>
+#include "version.h"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION TBZMQ_VERSION_MAJOR,TBZMQ_VERSION_MINOR,TBZMQ_VERSION_PATCH,TBZMQ_VERSION_BUILD
+ PRODUCTVERSION TBZMQ_VERSION_MAJOR,TBZMQ_VERSION_MINOR,TBZMQ_VERSION_PATCH,TBZMQ_VERSION_BUILD
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0
+#endif
+ FILEOS VOS__WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      TBZMQ_COMPANY_NAME
+            VALUE "FileDescription",  TBZMQ_FILE_DESCRIPTION
+            VALUE "FileVersion",      TBZMQ_VERSION_STRING
+            VALUE "InternalName",       TBZMQ_INTERNAL_NAME
+            VALUE "LegalCopyright",   TBZMQ_LEGAL_COPYRIGHT
+            VALUE "OriginalFilename", TBZMQ_ORIGINAL_FILENAME
+            VALUE "ProductName",      TBZMQ_PRODUCT_NAME
+            VALUE "ProductVersion",   TBZMQ_VERSION_STRING
+            VALUE "Comments",         TBZMQ_COMMENTS
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
