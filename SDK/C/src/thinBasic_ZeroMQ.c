@@ -144,6 +144,7 @@ static void tb_zmq_register_equates(void)
     tb_zmq_register_equate("%ZMQ_SNDTIMEO", ZMQ_SNDTIMEO);
     tb_zmq_register_equate("%ZMQ_DONTWAIT", ZMQ_DONTWAIT);
     tb_zmq_register_equate("%ZMQ_SNDMORE", ZMQ_SNDMORE);
+    tb_zmq_register_equate("%ZMQ_RCVMORE", ZMQ_RCVMORE);
 
     tb_zmq_register_equate("%ZMQ_MECHANISM", ZMQ_MECHANISM);
     tb_zmq_register_equate("%ZMQ_PLAIN_SERVER", ZMQ_PLAIN_SERVER);

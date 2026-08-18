@@ -170,7 +170,7 @@ Pelles C does **not** link `thinCore.lib`; `tb_thincore.c` resolves the exports 
 Equates registered by the module (use as `%ZMQ_REQ`, etc.):
 
 - Socket types: `%ZMQ_PAIR` … `%ZMQ_STREAM` (incl. `%ZMQ_PUSH` / `%ZMQ_PULL`)
-- Flags / common opts: `%ZMQ_DONTWAIT`, `%ZMQ_SNDMORE`, `%ZMQ_SUBSCRIBE`, `%ZMQ_UNSUBSCRIBE`,
+- Flags / common opts: `%ZMQ_DONTWAIT`, `%ZMQ_SNDMORE`, `%ZMQ_RCVMORE`, `%ZMQ_SUBSCRIBE`, `%ZMQ_UNSUBSCRIBE`,
   `%ZMQ_LINGER`, `%ZMQ_RCVTIMEO`, `%ZMQ_SNDTIMEO`
 - Security: `%ZMQ_MECHANISM`, `%ZMQ_PLAIN_*`, `%ZMQ_CURVE_*`, `%ZMQ_ZAP_DOMAIN`,
   `%ZMQ_NULL` / `%ZMQ_PLAIN` / `%ZMQ_CURVE`, `%ZMQ_CURVE_KEYSIZE`, `%ZMQ_CURVE_KEYSIZE_Z85`

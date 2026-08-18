@@ -46,6 +46,9 @@
 #define ZMQ_DONTWAIT 1
 #define ZMQ_SNDMORE  2
 
+/* Receive multipart state (zmq_getsockopt option ZMQ_RCVMORE) */
+#define ZMQ_RCVMORE 13
+
 /* Security mechanisms (ZMQ_MECHANISM values) */
 #define ZMQ_NULL   0
 #define ZMQ_PLAIN  1
